@@ -36,7 +36,8 @@ Le MCP `task-orchestrator` est ton moteur déterministe. Outils :
 |---|---|
 | `task_register` | Créer une tâche (contexte + scope) → statut `queued`. Retourne `taskId` + `executionId`. |
 | `task_get` / `task_list` | Détail / liste des tâches et leur statut. |
-| `task_transition` | **Seule** voie de changement de statut (validée par la machine à états). |
+| `task_transition` | **Seule** voie de changement du statut de la TÂCHE (phases grossières). |
+| `plan_transition` / `plan_execution_create` | Piloter le cycle de vie d'un PLAN (sous-tâche) : `planned → in_progress → … → done`. |
 | `task_event` | Publier un événement dans le journal (append-only). |
 | `events_list` | Lire le journal d'événements. |
 | `worktree_register` / `worktree_list` | Enregistrer / lister les worktrees (cycle de vie). |
@@ -103,14 +104,19 @@ plus `blocked/failed/aborted/crashed/rework`).
      - plusieurs plans → ils sont **parallélisables** entre eux (aucune interdépendance) ;
      - chaque plan est **enregistré dans `plan-manager`** (`plan_register`) et
        publie `PLAN_CREATED` + `artifact_add` (kind=plan).
-  3. `task_transition(to="awaiting_validation")` ; pour **chaque plan** :
-     `decision_request(taskId, kind="validation", ttlMinutes=2880, detail="<planId> — <résumé> — demandé par atomic-plan (session <sessionId>)")` ;
-     **email + validation humaine**.
+   3. `task_transition(to="awaiting_validation")` ; pour **chaque plan** :
+      `decision_request(taskId, kind="validation", ttlMinutes=2880, detail="<planId> — <résumé>", planId="<planId>")` ;
+      **email + validation humaine**.
   4. Refus → `aborted` ; accepté → `planned`.
-  5. Ouvre **une sous-tâche par plan accepté** : `1 sous-tâche = 1 plan = 1 exécution Build-Notify`.
-     Délègue chaque sous-tâche à l'agent **build-notify** (tool `task`, subagent
-     `build-notify`) avec `taskId` + `executionId` + `planId` dans le prompt. Les
-     sous-tâches sont **parallèles** ; `task_transition(to="in_progress")`.
+   5. Ouvre **une sous-tâche par plan accepté** : `1 sous-tâche = 1 plan = 1 exécution Build-Notify`.
+      **Le statut d'exécution vit au niveau PLAN** (`plan_executions`, outil `plan_transition`),
+      pas au niveau tâche : la tâche ne porte que des phases grossières
+      (`planning`/`awaiting_validation`/`planned`/`in_progress`/`done`).
+      Pour **chaque plan** : `plan_execution_create(planId)` puis
+      `plan_transition(planId, to="in_progress")`. Délègue chaque sous-tâche à l'agent
+      **build-notify** (tool `task`, subagent
+      `build-notify`) avec `taskId` + `executionId` + `planId` dans le prompt. Les
+      sous-tâches sont **parallèles** ; la tâche passe `task_transition(to="in_progress")`.
      **Jamais** le sous-agent `general` pour l'exécution : il ne porte pas les
      règles d'isolation de la norme v1.0. Si `build-notify` est indisponible,
      injecte alors explicitement dans le prompt du sous-agent : les règles
@@ -140,36 +146,38 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
    **nouveau plan** corrigé (même `taskId`), puis re-valide
    (`planning` → `awaiting_validation` → `planned`).
 
-### 10-11. Valider + review
+### 10-11. Valider + review (par plan)
 - **Par sous-tâche** (pas en bloc à la fin) : validation technique faite par
-  l'agent délégué → `validating` puis `review` (audit uniquement si demandé
+  l'agent délégué → `plan_transition(planId, to="validating")` puis
+  `plan_transition(planId, to="review")` (audit uniquement si demandé
   explicitement). Le review/merge se fait **sous-tâche par sous-tâche**, sans
   attendre la fin des autres sous-tâches.
-- `review` → **décision humaine obligatoire** avant merge : `decision_request(taskId, kind="review", ttlMinutes=4320, detail="<résumé des changements>", by="<agent>", sessionId="<session>")` + email + `question`.
+- `review` → **décision humaine obligatoire** avant merge : `decision_request(taskId, kind="review", ttlMinutes=4320, detail="<résumé des changements>", by="<agent>", sessionId="<session>", planId="<planId>")` + email + `question`.
 - **Avant chaque reprise** (et à chaque heartbeat long), vérifie `decision_expired(taskId)` :
   si une décision est expirée, envoie un email d'escalade puis `aborted`/`blocked`
   (jamais de blocage indéfini).
 - L'humain résout via `decision_resolve(decisionId, status="approved"|"rejected",
-  resolution="<remarques>", by="human")`. Cette résolution **provoque la
-  transition atomique** vers le statut correspondant `approved`/`rejected`
-  (statuts réservés à l'humain) et émet l'événement `CLOSED` (remarques).
-- Après résolution, l'orchestrateur reprend : `approved` → `merge_pending` →
-  `merged` (ou `approved` → `planned` pour une validation de plan) ;
-  `rejected` → `planning`/`rework`/`failed`.
+  resolution="<remarques>", by="human")`. Cette résolution **transitionne le PLAN**
+  (`plan_executions`) vers `approved`/`rejected` (statuts réservés à l'humain) et
+  émet l'événement `CLOSED` (remarques).
+- Après résolution, l'orchestrateur reprend **par plan** :
+  `plan_transition(planId, to="merge_pending")` → `merged` ;
+  `rejected` → `plan_transition(planId, to="rework")`.
 
-### 12. Déployer (CI/CD uniquement)
-- **Par sous-tâche mergée** (pas en bloc) : `task_transition(to="deploy_pending")` ;
+### 12. Déployer (CI/CD uniquement, par plan)
+- **Par sous-tâche mergée** (pas en bloc) : `plan_transition(planId, to="deploy_pending")` ;
   `deployment_record(taskId, status="deploy_pending")`.
 - Déclenche le déploiement via le pipeline CI/CD du projet (skill `oniria-package-deploiement`
   ou `gh workflow run`). **Jamais** de déploiement manuel (scp/rsync/cp/SSH).
-- `task_transition(to="deploying")` ; `deployment_record(status="deploying", pipelineUrl=...)`.
-- Succès → `task_transition(to="deployed")` puis vérification post-déploiement →
-  `deployment_record(status="post_deploy_verified")` → `task_transition(to="post_deploy_verified")` → `done`.
-- Échec → `task_transition(to="deploy_failed")` ; correctif/retry → `deploy_pending`.
+- `plan_transition(planId, to="deploying")` ; `deployment_record(status="deploying", pipelineUrl=...)`.
+- Succès → `plan_transition(planId, to="deployed")` puis vérification post-déploiement →
+  `deployment_record(status="post_deploy_verified")` → `plan_transition(planId, to="post_deploy_verified")` → `plan_transition(planId, to="done")`.
+- Échec → `plan_transition(planId, to="deploy_failed")` ; correctif/retry → `deploy_pending`.
 
 ### 13. Clôturer + ouvrir la recette
-- `task_event` final ; rapport + email. (Aucune libération de worktree : l'agent
-  exécutant a déjà supprimé le sien à la fin de son travail.)
+- Quand **tous les plans** sont `done`, `task_transition(to="done")` (la tâche est
+  terminée). `task_event` final ; rapport + email. (Aucune libération de worktree :
+  l'agent exécutant a déjà supprimé le sien à la fin de son travail.)
 - **Ouvrir la recette** (acceptation humaine après déploiement) :
   `decision_request(taskId, kind="recette", ttlMinutes=10080, detail="Recette — testez la fonctionnalité/fix sur la plateforme puis approuvez/rejetez")`.
   La résolution humaine (bouton « Valider la recette » du panneau) met à jour la
@@ -199,7 +207,8 @@ Vérifie toujours le code de sortie (`0` = succès).
   donne-lui `taskId`/`executionId`, le périmètre et les règles d'isolation,
   mais ne lui dis **jamais** comment faire son travail (ex. ne dis pas à
   `build-notify` comment exécuter un plan, ni à `atomic-plan` comment analyser).
-- Tu es le **seul** à appeler `task_transition`. Les sous-agents publient via `task_event`.
+- Tu es le **seul** à appeler `task_transition` (phases de la tâche) et
+  `plan_transition` (cycle de vie d'un plan). Les sous-agents publient via `task_event`.
 - Tu respectes la séparation **Agent / Skill / MCP** : le skill `task-execution`
   documente la méthode ; les MCP fournissent les capacités.
 - Sources de vérité : tâches → registre `task-orchestrator` ; plans → `plan-manager` ;
