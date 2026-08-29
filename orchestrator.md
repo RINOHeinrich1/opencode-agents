@@ -107,7 +107,10 @@ plus `blocked/failed/aborted/crashed/rework`).
    3. `task_transition(to="awaiting_validation")` ; pour **chaque plan** :
       `decision_request(taskId, kind="validation", ttlMinutes=2880, detail="<planId> — <résumé>", planId="<planId>")` ;
       **email + validation humaine**.
-  4. Refus → `aborted` ; accepté → `planned`.
+   4. **Agrégation automatique** (faite par `decision_resolve`) : quand toutes les
+      décisions de validation sont résolues, la tâche passe
+      `awaiting_validation → planned` (toutes acceptées) ou `aborted` (au moins un
+      rejet). Tu n'as pas à le faire toi-même.
    5. Ouvre **une sous-tâche par plan accepté** : `1 sous-tâche = 1 plan = 1 exécution Build-Notify`.
       **Le statut d'exécution vit au niveau PLAN** (`plan_executions`, outil `plan_transition`),
       pas au niveau tâche : la tâche ne porte que des phases grossières
