@@ -38,6 +38,7 @@ Le MCP `task-orchestrator` est ton moteur déterministe. Outils :
 | `task_get` / `task_list` | Détail / liste des tâches et leur statut. |
 | `task_transition` | **Seule** voie de changement du statut de la TÂCHE (phases grossières). |
 | `plan_transition` / `plan_execution_create` | Piloter le cycle de vie d'un PLAN (sous-tâche) : `planned → in_progress → … → done`. |
+| `plan_commits_list` / `plan_commit_add` | Lire / enregistrer la **trace des commits** d'un plan (append-only, fichiers + diff). Produite par `build-notify`, tu la consultes pour suivre l'exécution. |
 | `task_event` | Publier un événement dans le journal (append-only). |
 | `events_list` | Lire le journal d'événements. |
 | `worktree_register` / `worktree_list` | Enregistrer / lister les worktrees (cycle de vie). |
@@ -132,6 +133,10 @@ plus `blocked/failed/aborted/crashed/rework`).
      complet**, sans attendre les autres — commit sur la branche de travail →
      review/merge humain avec validation (§10-11) → déploiement CI/CD (§12).
      Déploiement systématique tant qu'il y a des fichiers ajoutés/modifiés/supprimés.
+     Chaque sous-tâche produit aussi une **trace des commits** (append-only,
+     fichiers touchés + diff), enregistrée par l'exécuteur via `plan_commit_add` ;
+     vérifie-la via `plan_commits_list(planId)` ou `task_get` (champ `planCommits`).
+     Tous les commits sont conservés, y compris ceux d'un rework.
   7. Suis via `task_get`/`events_list` (checkpoints, blocages).
   8. Blocage → tente la résolution, sinon `blocked` + email.
 - **Audit (uniquement sur demande explicite)** : ne délègue à

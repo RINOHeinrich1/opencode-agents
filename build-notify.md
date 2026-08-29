@@ -213,6 +213,36 @@ registre via le MCP `task-orchestrator` :
   rattacher la branche à la sous-tâche, puis
   `artifact_add(taskId, kind="report", title="<titre du rapport>", path="<chemin absolu hôte du rapport>")` (si un rapport markdown a été produit).
 
+## TRACE DES COMMITS (append-only par sous-tâche — OBLIGATOIRE)
+
+Chaque sous-tâche (plan) produit une **trace des commits** : tous les commits sont
+conservés dans le registre, **y compris ceux d'un rework** (une sous-tâche peut
+donc avoir **un ou plusieurs commits**). Pour chaque commit, on enregistre la liste
+des fichiers touchés/ajoutés **avec leur diff**, afin de pouvoir les visualiser
+dans le panneau.
+
+Procédure :
+
+1. **Avant de commencer à modifier** (juste après l'acquisition du verrou, avant
+   le premier commit), note le SHA de référence :
+   `git -C <gitRoot> rev-parse HEAD` → mémorise-le comme `<base>`.
+2. **Travaille normalement** (éditions, builds, commits). Chaque `git commit`
+   produit un commit ; sur un rework, les nouveaux commits s'**ajoutent** à la
+   trace (rien n'est effacé).
+3. **En fin de sous-tâche** (après ton dernier commit, avant `EXECUTION_COMPLETED`),
+   collecte la trace avec le script helper :
+   `node /root/.config/opencode/scripts/collect-git-commits.mjs --dir <gitRoot> --range <base>..HEAD`
+   (ou `--shas <sha1> <sha2> ...` si tu connais explicitement les shas).
+   Le JSON renvoyé contient `commits: [{ sha, message, author, committedAt, files: [{ path, status, additions, deletions, diff }] }]`.
+4. **Pour chaque commit** du JSON, enregistre-le via le MCP `task-orchestrator` :
+   `plan_commit_add(planId="<planId>", sha="<sha>", branch="<branche>", message="<message>", author="<author>", committedAt="<committedAt>", files=[...])`
+   (transmets aussi `taskId` et `executionId` si fournis).
+5. Les commits sont **append-only** : n'appelle jamais de suppression ; un rework
+   ajoute simplement de nouveaux commits à la même sous-tâche.
+
+Le panneau affiche alors, par plan : le nombre de commits et, pour chaque commit,
+les fichiers touchés/ajoutés avec leur diff (bouton « commits »).
+
 Sans `taskId`/`executionId` (usage autonome), ne change **rien** à ton
 comportement actuel : session-guard, coder-workspaces et emails restent inchangés.
 
