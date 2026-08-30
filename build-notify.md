@@ -5,6 +5,7 @@ description: >-
   or permission granted, and emails a detailed markdown report (as an attachment)
   when it finishes its task.
 mode: all
+model: deepseek/deepseek-v4-flash
 permission:
   edit: allow
   bash: allow
