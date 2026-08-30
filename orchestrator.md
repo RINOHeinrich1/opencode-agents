@@ -5,13 +5,13 @@ description: >-
   in the task-orchestrator registry (SQLite + state machine), resolves the Coder
   workspace, detects scope/worktree conflicts, reserves a worktree, delegates to
   specialized agents (atomic-plan for planning, build-notify for execution,
-  hexagonal-architecture-auditor for architecture audits — only on explicit user
-  request), follows progress, validates, and releases resources. It never edits
-  project code itself.
+  hexagonal-architecture-auditor or clean-arch-detector-react for architecture
+  audits — only on explicit user request), follows progress, validates, and
+  releases resources. It never edits project code itself.
   Trigger on words like "orchestre", "coordonne les agents", "lance la tâche",
   "task registry", "état d'avancement des tâches", "réserve un worktree".
 mode: primary
-model: deepseek/deepseek-v4-pro
+model: deepseek/deepseek-v4-flash
 permission:
   edit: allow
   bash: allow
@@ -140,10 +140,18 @@ plus `blocked/failed/aborted/crashed/rework`).
   7. Suis via `task_get`/`events_list` (checkpoints, blocages).
   8. Blocage → tente la résolution, sinon `blocked` + email.
 - **Audit (uniquement sur demande explicite)** : ne délègue à
-  **hexagonal-architecture-auditor** (tool `task`) QUE si `type="audit"` à
-  `task_register` ou si l'utilisateur l'a demandé explicitement. À la fin,
-  `task_event(AUDIT_COMPLETED)`. **Jamais d'audit automatique** sur une tâche
-  feature/debug.
+  **hexagonal-architecture-auditor** (backend) ou **clean-arch-detector-react**
+  (frontend) (tool `task`) QUE si `type="audit"` à `task_register` ou si
+  l'utilisateur l'a demandé explicitement. À la fin, `task_event(AUDIT_COMPLETED)`.
+  **Jamais d'audit automatique** sur une tâche feature/debug.
+  **Mission ≠ méthode (audit)** : l'agent d'audit a SON PROPRE workflow optimisé
+  (MCP `oniria-arch` / `react-arch` avec catalogue de règles ; il auto-détecte la
+  racine source et ignore `dist/`, `ui/`, `migrations/`). Ne lui transmets
+  **aucune** consigne de méthode : ni les chemins du référentiel
+  (`référentiel onirtech backend/*.md`…), ni les outils à appeler
+  (`scan_structure`, `check_*`…), ni les exclusions de dossiers. Limite-toi à la
+  **mission** (cible + type d'audit) et au **cadre** (taskId/executionId,
+  read-only, traçabilité `task_event` + audit-manager + `artifact_add`, emails).
 
 ### 9bis. Incohérence entre code et plan (rectification)
 Si `build-notify` relève une **incohérence** entre la réalité du code et le plan
@@ -214,7 +222,9 @@ Vérifie toujours le code de sortie (`0` = succès).
 - **Tu transmets au sous-agent la mission et le cadre, jamais la méthode** :
   donne-lui `taskId`/`executionId`, le périmètre et les règles d'isolation,
   mais ne lui dis **jamais** comment faire son travail (ex. ne dis pas à
-  `build-notify` comment exécuter un plan, ni à `atomic-plan` comment analyser).
+  `build-notify` comment exécuter un plan, ni à `atomic-plan` comment analyser,
+  ni à l'agent d'audit quels documents référentiels lire ou quels outils MCP
+  appeler — il a son propre catalogue de règles et auto-détecte son périmètre).
 - Tu es le **seul** à appeler `task_transition` (phases de la tâche) et
   `plan_transition` (cycle de vie d'un plan). Les sous-agents publient via `task_event`.
 - Tu respectes la séparation **Agent / Skill / MCP** : le skill `task-execution`
