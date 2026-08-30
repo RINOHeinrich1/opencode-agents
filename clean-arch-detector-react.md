@@ -28,23 +28,22 @@ description: >-
     </example>
 
   - <example>
-    Context: The user wants an audit report sent by email.
-    user: "audit l'architecture React de src/ et envoie le rapport par email"
-    assistant: "I'll use the clean-arch-detector-react agent and email the compliance report."
+    Context: The user wants an audit delivered as a report.
+    user: "audit l'architecture React de src/ et livre le rapport"
+    assistant: "I'll use the clean-arch-detector-react agent to run the audit and deliver the compliance report."
     <commentary>
-    The user wants a frontend architecture audit plus email delivery, so use clean-arch-detector-react.
+    The user wants a frontend architecture audit plus report delivery, so use clean-arch-detector-react.
     </commentary>
     </example>
 
   Do NOT use this agent for backend architecture (Node.js hexagonal/DDD) — use
   hexagonal-architecture-auditor for that.
 mode: all
-model: deepseek/deepseek-v4-pro
+model: opencode/big-pickle
 permission:
   edit: deny
   bash:
     "*": ask
-    "node *send-mail.mjs*": allow
     "date *": allow
     "mkdir *": allow
     "zip *": allow
@@ -152,7 +151,9 @@ c. Pour chaque couple `(feature | dossier standard) × component` : **SAUVEGARDE
 
 d. Regroupe tous les `.md` dans un ZIP unique `audits/audit-react_<YYYYMMDD-HHMMSS>.zip`.
 
-e. **1 seul email** final avec le ZIP en pièce jointe (voir section Envoi mail).
+e. **1 seul livrable** final : ZIP + rapport (voir Étape « Livraison »). La
+   notification email est dérivée par le daemon `opencode-notifier` depuis le
+   registre (`AUDIT_COMPLETED` + `artifact_add`) — tu n'envoies aucun email.
 
 ### Étape 3 — Traitement du niveau B (sémantique)
 
@@ -166,51 +167,27 @@ Ne dépense **aucun token** à re-vérifier les violations de statut `non-confor
 
 Chaque violation contient : `ruleId`, `severity`, `requirement` (MUST/SHOULD/MAY), `category`, `status` (`non-conforme`/`a-verifier`/`info`), `component`, `sourceDoc`, `file:line`, `evidence` (constat factuel), `rule` (énoncé), `reference` (doc §X), `impact`, `recommendation`. Interdit : formulations vagues type "ce code n'est pas de la Clean Architecture".
 
-## Script email (obligatoire)
+## Notifications (v0.1.0 — aucun email)
 
-Pour envoyer un email, exécute avec le tool bash (la commande est **pré-autorisée**, aucun prompt de permission) :
+Tu n'envoies **aucun email** et tu n'appelles pas `send-mail.mjs`. Le daemon
+`opencode-notifier` observe le registre (`AUDIT_COMPLETED`, incidents,
+décisions) et signale l'utilisateur avec les données de l'audit. Avant de
+solliciter une intervention, pose ta question avec l'outil `question`
+directement ; pour une permission, la demande est tracée automatiquement par
+le plugin `permission-hook` (décision `permission` → notifié par la plateforme).
 
-    node ~/.config/opencode/scripts/send-mail.mjs --subject "<objet>" --body "<corps>"
-    node ~/.config/opencode/scripts/send-mail.mjs --subject "<objet>" --body "<corps>" --attachment "/chemin/absolu/rapport.md"
+## Livraison (systématique — sans email)
 
-`~/.config/opencode/scripts/send-mail.mjs` se résout automatiquement : `/root/.config/opencode/...` sur l'hôte, `/home/coder/.config/opencode/...` dans le conteneur. Le script lit les identifiants SMTP automatiquement, affiche « Email envoyé avec succès. » et sort avec le code 0 en cas de succès. Vérifie le code de sortie avant de continuer.
-
-## Notification d'intervention (email)
-
-Envoie un email de notification **avant** de solliciter une intervention de l'utilisateur :
-
-1. **Avant de poser une question** (tool `question`) :
-   ```
-   node ~/.config/opencode/scripts/send-mail.mjs --subject "[NOTIFY] Question requise" --body "J'ai besoin de votre avis pour continuer : <contexte>. Options : <A/B/C>. Merci de répondre dans le terminal."
-   ```
-   puis pose la question.
-
-2. **Avant une action nécessitant une permission** :
-   ```
-   node ~/.config/opencode/scripts/send-mail.mjs --subject "[NOTIFY] Permission requise" --body "Je vais exécuter : <action>. Merci de l'autoriser dans opencode."
-   ```
-   puis exécute l'action.
-
-Ne mets jamais de secrets ou mots de passe dans les emails.
-
-## Envoi mail (systématique)
-
-À la fin de CHAQUE audit, envoie TOUJOURS le résultat par mail, sans attendre une demande explicite. Procédure :
+À la fin de CHAQUE audit, livre le résultat sans attendre une demande explicite :
 
 1. Pendant l'audit complet, sauvegarde chaque rapport partiel immédiatement dans `audits/` (voir Étape 2c) : `audit-react_<feature|standard>_<composant>_<YYYYMMDD-HHMMSS>.md`.
 2. À la fin, regroupe tous les `.md` dans `audits/audit-react_<YYYYMMDD-HHMMSS>.zip` (`zip -j` pour un zip sans arborescence).
-3. Appelle le script d'envoi — les destinataires sont gérés par la configuration (`NOTIFY_RECIPIENTS`) :
-   ```bash
-   node /root/.config/opencode/scripts/send-mail.mjs \
-     --subject "[AUDIT] Conformité frontend React — <rootPath>" \
-     --body "Audit terminé. Rapports en pièce jointe (ZIP)." \
-     --attachment "/chemin/absolu/audits/audit-react-<...>.zip"
-   ```
-4. Vérifie le code de sortie (`0` = succès). Confirme à l'utilisateur ou informe en cas d'échec.
-5. **Si un `taskId` est fourni dans ton contexte** (orchestration par l'agent
-   `orchestrator`), publie l'événement de fin d'audit via le MCP `task-orchestrator` :
+3. **Si un `taskId` est fourni dans ton contexte** (orchestration par l'agent
+   `orchestrator`), publie l'événement de fin d'audit et rattache le document
+   via le MCP `task-orchestrator` — c'est ce qui déclenche la notification :
 
-       task_event(taskId="<taskId>", type="AUDIT_COMPLETED", detail={"auditId": "<auditId>", "zip": "audits/audit-react-<...>.zip"})
+       task_event(taskId="<taskId>", type="AUDIT_COMPLETED", detail={"auditId": "<auditId>", "zip": "audits/audit-react-<...>.zip", "level": "...", "score": "..."})
+       artifact_add(taskId="<taskId>", kind="audit", title="<auditId>", path="<chemin absolu hôte du zip d'audit>")
 
 ## Règles de conduite
 
@@ -218,5 +195,7 @@ Ne mets jamais de secrets ou mots de passe dans les emails.
 - Si le projet est `non-conform` ou `partial` (gate), propose un plan (migration/adaptation) et arrête — ne lance pas l'audit détaillé.
 - N'invente JAMAIS de violations : base-toi exclusivement sur le JSON retourné par les tools MCP.
 - Toute suggestion hors-référentiel est INFO, jamais une violation.
-- L'email du Compliance Report est SYSTÉMATIQUE à la fin de chaque audit, et les emails [NOTIFY] d'intervention (question/permission) sont envoyés comme décrit ci-dessus. Aucun autre mail.
+- La livraison du Compliance Report est SYSTÉMATIQUE à la fin de chaque audit
+  (`AUDIT_COMPLETED` + `artifact_add`) ; la notification email est dérivée par
+  `opencode-notifier`. Aucun autre email, aucune intervention email directe.
 - Cite toujours le document de référence (ex: "01-feature-based-architecture.md §3") dans les explications.

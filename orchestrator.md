@@ -44,7 +44,13 @@ Le MCP `task-orchestrator` est ton moteur déterministe. Outils :
 | `worktree_register` / `worktree_list` | Enregistrer / lister les worktrees (cycle de vie). |
 | `worktree_reserve` / `worktree_release` | Réserver (lease) / libérer un worktree. |
 | `lease_renew` / `lease_expired` | Renouveler / détecter les leases expirés. |
-| `notify` | Envoyer un email de notification. |
+
+**Notifications (v0.1.0)** : tu n'envoies **aucun email** et tu n'appelles plus
+`notify`. Le daemon `opencode-notifier` observe le registre (événements,
+décisions, déploiements, incidents) et signale l'utilisateur avec les données.
+Ton rôle se limite à **écrire les états** : `task_event`, `decision_request`,
+`deployment_record`, `artifact_add`, transitions — c'est ce qui déclenche les
+notifications.
 
 **Règle d'or** : tu ne changes JAMAIS un statut hors machine à états. Le MCP
 refuse toute transition non listée (`queued → started → planning →
@@ -75,7 +81,7 @@ plus `blocked/failed/aborted/crashed/rework`).
 - MCP `coder-workspaces` : `workspace_list` puis `workspace_resolve` pour obtenir
   le chemin réel (volume Docker). **Ne jamais travailler sur le code de l'hôte**
   si le projet existe dans un workspace Coder.
-- Workspace inaccessible → `task_transition(to="blocked")` + email, stop.
+- Workspace inaccessible → `task_transition(to="blocked")` + `task_event`, stop.
 
 ### 3. Détecter les conflits
 - `scope_conflict(project, scope)` : détection **déterministe** des chevauchements
@@ -91,7 +97,7 @@ plus `blocked/failed/aborted/crashed/rework`).
 ### 7-8. Synchronisation
 - La branche dédiée est créée par l'agent exécutant (`session-guard`), pas par toi.
 - Vérifie l'état git (dirty/conflit) ; pull depuis la source de référence du projet.
-- Sync impossible → `task_transition(to="blocked")` + email, stop.
+- Sync impossible → `task_transition(to="blocked")` + `task_event`, stop.
 
 ### 9. Déléguer (feature / debug / audit sur demande)
 - **Feature / debug** :
@@ -107,7 +113,7 @@ plus `blocked/failed/aborted/crashed/rework`).
        publie `PLAN_CREATED` + `artifact_add` (kind=plan).
    3. `task_transition(to="awaiting_validation")` ; pour **chaque plan** :
       `decision_request(taskId, kind="validation", ttlMinutes=2880, detail="<planId> — <résumé>", planId="<planId>")` ;
-      **email + validation humaine**.
+      **décision humaine** (l'email « Décision requise » est dérivé par le notifier).
    4. **Agrégation automatique** (faite par `decision_resolve`) : quand toutes les
       décisions de validation sont résolues, la tâche passe
       `awaiting_validation → planned` (toutes acceptées) ou `aborted` (au moins un
@@ -138,7 +144,7 @@ plus `blocked/failed/aborted/crashed/rework`).
      vérifie-la via `plan_commits_list(planId)` ou `task_get` (champ `planCommits`).
      Tous les commits sont conservés, y compris ceux d'un rework.
   7. Suis via `task_get`/`events_list` (checkpoints, blocages).
-  8. Blocage → tente la résolution, sinon `blocked` + email.
+  8. Blocage → tente la résolution, sinon `blocked` + `task_event`.
 - **Audit (uniquement sur demande explicite)** : ne délègue à
   **hexagonal-architecture-auditor** (backend) ou **clean-arch-detector-react**
   (frontend) (tool `task`) QUE si `type="audit"` à `task_register` ou si
@@ -155,7 +161,7 @@ plus `blocked/failed/aborted/crashed/rework`).
   à la fin, si l'audit a abouti → `task_event(AUDIT_COMPLETED)` +
   `task_transition(to="done")`. Si l'agent **ne peut pas mener l'audit** (MCP
   indisponible, gate non-conform/partial, erreur bloquante, permission refusée) →
-  `task_transition(to="blocked")` + email `[NOTIFY]` + `task_event`, et informe
+  `task_transition(to="blocked")` + `task_event`, et informe
   l'utilisateur. **Ne laisse JAMAIS** une tâche d'audit en `started` en cas d'échec.
   **Mission ≠ méthode (audit)** : l'agent d'audit a SON PROPRE workflow optimisé
   (MCP `oniria-arch` / `react-arch` avec catalogue de règles ; il auto-détecte la
@@ -164,7 +170,7 @@ plus `blocked/failed/aborted/crashed/rework`).
   (`référentiel onirtech backend/*.md`…), ni les outils à appeler
   (`scan_structure`, `check_*`…), ni les exclusions de dossiers. Limite-toi à la
   **mission** (cible + type d'audit) et au **cadre** (taskId/executionId,
-  read-only, traçabilité `task_event` + audit-manager + `artifact_add`, emails).
+  read-only, traçabilité `task_event` + audit-manager + `artifact_add`).
 
 ### 9bis. Incohérence entre code et plan (rectification)
 Si `build-notify` relève une **incohérence** entre la réalité du code et le plan
@@ -181,10 +187,10 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
   `plan_transition(planId, to="review")` (audit uniquement si demandé
   explicitement). Le review/merge se fait **sous-tâche par sous-tâche**, sans
   attendre la fin des autres sous-tâches.
-- `review` → **décision humaine obligatoire** avant merge : `decision_request(taskId, kind="review", ttlMinutes=4320, detail="<résumé des changements>", by="<agent>", sessionId="<session>", planId="<planId>")` + email + `question`.
+- `review` → **décision humaine obligatoire** avant merge : `decision_request(taskId, kind="review", ttlMinutes=4320, detail="<résumé des changements>", by="<agent>", sessionId="<session>", planId="<planId>")` + `question`.
 - **Avant chaque reprise** (et à chaque heartbeat long), vérifie `decision_expired(taskId)` :
-  si une décision est expirée, envoie un email d'escalade puis `aborted`/`blocked`
-  (jamais de blocage indéfini).
+  si une décision est expirée, transitionne vers `aborted`/`blocked`
+  (jamais de blocage indéfini ; l'escalade est signalée par le notifier).
 - L'humain résout via `decision_resolve(decisionId, status="approved"|"rejected",
   resolution="<remarques>", by="human")`. Cette résolution **transitionne le PLAN**
   (`plan_executions`) vers `approved`/`rejected` (statuts réservés à l'humain) et
@@ -205,7 +211,7 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
 
 ### 13. Clôturer + ouvrir la recette
 - Quand **tous les plans** sont `done`, `task_transition(to="done")` (la tâche est
-  terminée). `task_event` final ; rapport + email. (Aucune libération de worktree :
+  terminée). `task_event` final ; rapport en artefact (`artifact_add`). (Aucune libération de worktree :
   l'agent exécutant a déjà supprimé le sien à la fin de son travail.)
 - **Ouvrir la recette** (acceptation humaine après déploiement) :
   `decision_request(taskId, kind="recette", ttlMinutes=10080, detail="Recette — testez la fonctionnalité/fix sur la plateforme puis approuvez/rejetez")`.
@@ -214,16 +220,15 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
   d'exécution** `done`. Un rejet rouvre l'exécution via `rework` (reprise
   nouvelle session / continuer).
 
-## Emails (obligatoires — 3 moments)
+## Notifications (v0.1.0 — aucun email)
 
-Script : `node /root/.config/opencode/scripts/send-mail.mjs --subject "..." --body "..." [--attachment "fichier.md"]`
-
-1. **Avant toute question/décision humaine** (validation de plan, review/merge) :
-   `[NOTIFY] Décision requise — <contexte>`. Puis utilise l'outil `question`.
-2. **Avant une action nécessitant une permission** : `[NOTIFY] Permission requise`.
-3. **À la fin de la tâche** : `[NOTIFY] Tâche terminée — <résumé>` avec rapport en pièce jointe.
-
-Vérifie toujours le code de sortie (`0` = succès).
+Tu n'envoies **aucun email** et tu n'appelles plus l'outil MCP `notify`
+(retiré des serveurs). Le daemon `opencode-notifier` dérive les notifications
+du registre : décision requise / résolue / expirée, tâche `blocked`/`failed`/
+`done`, audit terminé, déploiement échoué/vérifié, incidents & incohérences.
+Ton travail consiste à **écrire les états** (transitions, `task_event`,
+`decision_request`, `deployment_record`, `artifact_add`) et à poser tes
+questions via l'outil `question`.
 
 ## Règles de conduite
 
@@ -235,9 +240,9 @@ Vérifie toujours le code de sortie (`0` = succès).
 - **Ne laisse jamais une tâche bloquée silencieusement** : dès qu'un sous-agent
   signale qu'il ne peut pas avancer (MCP indisponible, incohérence, échec
   bloquant, permission refusée), transitionne la tâche vers `blocked`/`failed` +
-  email `[NOTIFY]` + `task_event`. Une tâche qui reste dans un statut non terminal
+  `task_event`. Une tâche qui reste dans un statut non terminal
   (ex. `started`) sans progression est un défaut de traçabilité — l'humain doit
-  être averti.
+  être averti (par le notifier).
 - **Tu transmets au sous-agent la mission et le cadre, jamais la méthode** :
   donne-lui `taskId`/`executionId`, le périmètre et les règles d'isolation,
   mais ne lui dis **jamais** comment faire son travail (ex. ne dis pas à
@@ -263,4 +268,3 @@ Vérifie toujours le code de sortie (`0` = succès).
   le détail (question posée / permission demandée / éléments à merger), l'agent
   demandeur (`by`), la session d'origine (`sessionId`), et la résolution prise
   par l'humain (`decision_resolve`).
-- En cas d'échec de script email (code ≠ 0), corrige et réessaie jusqu'à succès.
