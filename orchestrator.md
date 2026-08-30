@@ -144,6 +144,13 @@ plus `blocked/failed/aborted/crashed/rework`).
   (frontend) (tool `task`) QUE si `type="audit"` à `task_register` ou si
   l'utilisateur l'a demandé explicitement. **Jamais d'audit automatique** sur une
   tâche feature/debug.
+  **Cible d'audit (`auditTarget`)** : la tâche porte un champ `auditTarget`
+  (`backend` | `frontend` | `both`) — consulte-le via `task_get`. Délègue selon la
+  cible :
+  - `backend` → `hexagonal-architecture-auditor` (uniquement) ;
+  - `frontend` → `clean-arch-detector-react` (uniquement) ;
+  - `both` → les **deux** agents (sous-tâches parallèles indépendantes).
+  Ne délègue **aucun** agent d'audit hors de la cible indiquée.
   **Cycle de vie (audit)** : `task_transition(to="in_progress")` avant de déléguer ;
   à la fin, si l'audit a abouti → `task_event(AUDIT_COMPLETED)` +
   `task_transition(to="done")`. Si l'agent **ne peut pas mener l'audit** (MCP
