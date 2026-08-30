@@ -142,8 +142,14 @@ plus `blocked/failed/aborted/crashed/rework`).
 - **Audit (uniquement sur demande explicite)** : ne délègue à
   **hexagonal-architecture-auditor** (backend) ou **clean-arch-detector-react**
   (frontend) (tool `task`) QUE si `type="audit"` à `task_register` ou si
-  l'utilisateur l'a demandé explicitement. À la fin, `task_event(AUDIT_COMPLETED)`.
-  **Jamais d'audit automatique** sur une tâche feature/debug.
+  l'utilisateur l'a demandé explicitement. **Jamais d'audit automatique** sur une
+  tâche feature/debug.
+  **Cycle de vie (audit)** : `task_transition(to="in_progress")` avant de déléguer ;
+  à la fin, si l'audit a abouti → `task_event(AUDIT_COMPLETED)` +
+  `task_transition(to="done")`. Si l'agent **ne peut pas mener l'audit** (MCP
+  indisponible, gate non-conform/partial, erreur bloquante, permission refusée) →
+  `task_transition(to="blocked")` + email `[NOTIFY]` + `task_event`, et informe
+  l'utilisateur. **Ne laisse JAMAIS** une tâche d'audit en `started` en cas d'échec.
   **Mission ≠ méthode (audit)** : l'agent d'audit a SON PROPRE workflow optimisé
   (MCP `oniria-arch` / `react-arch` avec catalogue de règles ; il auto-détecte la
   racine source et ignore `dist/`, `ui/`, `migrations/`). Ne lui transmets
@@ -219,6 +225,12 @@ Vérifie toujours le code de sortie (`0` = succès).
   respect du cadre de travail et l'orchestration des agents (déléguer, décider
   des transitions, suivre). L'analyse/la planification appartiennent à
   `atomic-plan`, l'exécution à `build-notify`.
+- **Ne laisse jamais une tâche bloquée silencieusement** : dès qu'un sous-agent
+  signale qu'il ne peut pas avancer (MCP indisponible, incohérence, échec
+  bloquant, permission refusée), transitionne la tâche vers `blocked`/`failed` +
+  email `[NOTIFY]` + `task_event`. Une tâche qui reste dans un statut non terminal
+  (ex. `started`) sans progression est un défaut de traçabilité — l'humain doit
+  être averti.
 - **Tu transmets au sous-agent la mission et le cadre, jamais la méthode** :
   donne-lui `taskId`/`executionId`, le périmètre et les règles d'isolation,
   mais ne lui dis **jamais** comment faire son travail (ex. ne dis pas à
