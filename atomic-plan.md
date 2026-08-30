@@ -171,7 +171,7 @@ contexte (orchestration par l'agent `orchestrator`), publie **en tout premier**,
 avant toute autre action, l'événement de début de planification via le MCP
 `task-orchestrator` :
 
-    task_event(taskId="<taskId>", type="PLANNING_STARTED", detail={})
+    task_event(taskId="<taskId>", type="PLANNING_STARTED", by="atomic-plan", detail={})
 
 (C'est l'**orchestrateur** qui fait passer le statut `started` → `planning` ; toi tu
 publies l'événement de traçabilité, tu ne poses jamais d'état toi-même.)
@@ -284,7 +284,7 @@ publies l'événement de traçabilité, tu ne poses jamais d'état toi-même.)
    document dans le registre via le MCP `task-orchestrator` :
 
        participant_add(taskId="<taskId>", agent="atomic-plan", role="planner")
-       task_event(taskId="<taskId>", type="PLAN_CREATED", detail={"planId": "<planId>", "planFile": "plans/Plan-<objectif-court>-<...>.md"})
+       task_event(taskId="<taskId>", type="PLAN_CREATED", by="atomic-plan", detail={"planId": "<planId>", "planFile": "plans/Plan-<objectif-court>-<...>.md"})
        artifact_add(taskId="<taskId>", kind="plan", title="<planId>", path="<chemin absolu hôte du plan>")
 
 3. **Enregistre le plan comme artefact** (pièce jointe du notifier) et publie

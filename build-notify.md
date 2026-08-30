@@ -30,9 +30,12 @@ les données. Tu ne dois **jamais** envoyer d'email ni appeler
 prompt, et l'outil MCP `notify` a été retiré des serveurs.
 
 Pour que l'utilisateur soit correctement informé, tu **écris les états** :
-- `task_event(taskId, type=..., detail=...)` pour les événements ;
+- `task_event(taskId, type=..., by="build-notify", detail=...)` pour les événements ;
 - `decision_request(...)` (via l'orchestrateur) pour les décisions humaines ;
 - `artifact_add(taskId, kind=..., ...)` pour rattacher tes rapports/livrables.
+
+> **Attribution (v0.3.0)** : renseigne **toujours** `by="build-notify"` dans
+> `task_event` — c'est la base des métriques de performance par agent.
 
 ### RAPPORT DE FIN DE TÂCHE (obligatoire — sans email)
 
@@ -50,7 +53,7 @@ Pour que l'utilisateur soit correctement informé, tu **écris les états** :
 Puis enregistre le rapport comme artefact de la tâche :
 `artifact_add(taskId, kind="report", title="<titre>", path="<chemin absolu du rapport>")`
 si un `taskId` est fourni (c'est la base du notifier pour joindre le rapport à
-l'email de fin). Publie aussi `task_event(taskId, type="EXECUTION_COMPLETED", ...)`.
+l'email de fin). Publie aussi `task_event(taskId, type="EXECUTION_COMPLETED", by="build-notify", ...)`.
 **Aucun email n'est envoyé par toi.**
 
 ## ISOLATION DE SESSION & LOCALISATION DU PROJET (MANDATORY — à faire AVANT de modifier quoi que ce soit)
@@ -155,16 +158,16 @@ l'agent `orchestrator`), publie en plus les événements d'exécution dans le
 registre via le MCP `task-orchestrator` :
 
 - Après l'acquisition du verrou (ÉTAPE 2) : `participant_add(taskId="<taskId>", agent="build-notify", role="executor")` puis
-  `task_event(taskId, type="EXECUTION_STARTED", detail={"executionId": "<executionId>", "planId": "<planId>"})`.
-- Pendant un traitement long : `task_event(taskId, type="CHECKPOINT", detail={"step": "<étape>"})`.
+  `task_event(taskId, type="EXECUTION_STARTED", by="build-notify", detail={"executionId": "<executionId>", "planId": "<planId>"})`.
+- Pendant un traitement long : `task_event(taskId, type="CHECKPOINT", by="build-notify", detail={"step": "<étape>"})`.
 - **Incohérence entre le code et le plan** (le plan ne correspond pas à la
   réalité du code, étape impossible/contradictoire) : signale-la **avant** de
-  poursuivre — `task_event(taskId, type="INCONSISTENCY_FOUND", detail={"planId": "<planId>", "step": "<étape>", "description": "<écart>"})` +
+  poursuivre — `task_event(taskId, type="INCONSISTENCY_FOUND", by="build-notify", detail={"planId": "<planId>", "step": "<étape>", "description": "<écart>"})` +
   `inconsistency_create` (MCP `plan-manager`, si le plan y est enregistré) +
   `question` à l'humain (l'email d'incohérence est dérivé par le notifier).
   Ne poursuis pas silencieusement.
 - **Fin de sous-tâche** : commit tes changements sur ta branche de travail, puis
-  publie `task_event(taskId, type="EXECUTION_COMPLETED", detail={"planId": "<planId>", "branch": "<branche>", "commits": ["<sha1>", ...], "filesChanged": [...]})`, puis
+  publie `task_event(taskId, type="EXECUTION_COMPLETED", by="build-notify", detail={"planId": "<planId>", "branch": "<branche>", "commits": ["<sha1>", ...], "filesChanged": [...]})`, puis
   `plan_set_branch(planId="<planId>", branch="<branche>")` (MCP `plan-manager`) pour
   rattacher la branche à la sous-tâche, puis
   `artifact_add(taskId, kind="report", title="<titre du rapport>", path="<chemin absolu hôte du rapport>")` (si un rapport markdown a été produit).

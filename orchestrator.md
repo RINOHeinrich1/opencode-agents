@@ -112,7 +112,7 @@ plus `blocked/failed/aborted/crashed/rework`).
      - chaque plan est **enregistré dans `plan-manager`** (`plan_register`) et
        publie `PLAN_CREATED` + `artifact_add` (kind=plan).
    3. `task_transition(to="awaiting_validation")` ; pour **chaque plan** :
-      `decision_request(taskId, kind="validation", ttlMinutes=2880, detail="<planId> — <résumé>", planId="<planId>")` ;
+      `decision_request(taskId, kind="validation", ttlMinutes=2880, by="orchestrator", detail="<planId> — <résumé>", planId="<planId>")` ;
       **décision humaine** (l'email « Décision requise » est dérivé par le notifier).
    4. **Agrégation automatique** (faite par `decision_resolve`) : quand toutes les
       décisions de validation sont résolues, la tâche passe
@@ -158,7 +158,7 @@ plus `blocked/failed/aborted/crashed/rework`).
   - `both` → les **deux** agents (sous-tâches parallèles indépendantes).
   Ne délègue **aucun** agent d'audit hors de la cible indiquée.
   **Cycle de vie (audit)** : `task_transition(to="in_progress")` avant de déléguer ;
-  à la fin, si l'audit a abouti → `task_event(AUDIT_COMPLETED)` +
+  à la fin, si l'audit a abouti → `task_event(AUDIT_COMPLETED, by="orchestrator")` +
   `task_transition(to="done")`. Si l'agent **ne peut pas mener l'audit** (MCP
   indisponible, gate non-conform/partial, erreur bloquante, permission refusée) →
   `task_transition(to="blocked")` + `task_event`, et informe
@@ -187,7 +187,7 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
   `plan_transition(planId, to="review")` (audit uniquement si demandé
   explicitement). Le review/merge se fait **sous-tâche par sous-tâche**, sans
   attendre la fin des autres sous-tâches.
-- `review` → **décision humaine obligatoire** avant merge : `decision_request(taskId, kind="review", ttlMinutes=4320, detail="<résumé des changements>", by="<agent>", sessionId="<session>", planId="<planId>")` + `question`.
+- `review` → **décision humaine obligatoire** avant merge : `decision_request(taskId, kind="review", ttlMinutes=4320, detail="<résumé des changements>", by="<agent>", sessionId="<session>", planId="<planId>")` + `question`. (`by` = l'agent qui demande, ex. `build-notify`.)
 - **Avant chaque reprise** (et à chaque heartbeat long), vérifie `decision_expired(taskId)` :
   si une décision est expirée, transitionne vers `aborted`/`blocked`
   (jamais de blocage indéfini ; l'escalade est signalée par le notifier).
@@ -214,7 +214,7 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
   terminée). `task_event` final ; rapport en artefact (`artifact_add`). (Aucune libération de worktree :
   l'agent exécutant a déjà supprimé le sien à la fin de son travail.)
 - **Ouvrir la recette** (acceptation humaine après déploiement) :
-  `decision_request(taskId, kind="recette", ttlMinutes=10080, detail="Recette — testez la fonctionnalité/fix sur la plateforme puis approuvez/rejetez")`.
+  `decision_request(taskId, kind="recette", ttlMinutes=10080, by="orchestrator", detail="Recette — testez la fonctionnalité/fix sur la plateforme puis approuvez/rejetez")`.
   La résolution humaine (bouton « Valider la recette » du panneau) met à jour la
   colonne `recette_status` (approved/rejected) **sans toucher au statut
   d'exécution** `done`. Un rejet rouvre l'exécution via `rework` (reprise

@@ -186,7 +186,7 @@ le plugin `permission-hook` (décision `permission` → notifié par la platefor
    `orchestrator`), publie l'événement de fin d'audit et rattache le document
    via le MCP `task-orchestrator` — c'est ce qui déclenche la notification :
 
-       task_event(taskId="<taskId>", type="AUDIT_COMPLETED", detail={"auditId": "<auditId>", "zip": "audits/audit-react-<...>.zip", "level": "...", "score": "..."})
+       task_event(taskId="<taskId>", type="AUDIT_COMPLETED", by="clean-arch-detector-react", detail={"auditId": "<auditId>", "zip": "audits/audit-react-<...>.zip", "level": "...", "score": "..."})
        artifact_add(taskId="<taskId>", kind="audit", title="<auditId>", path="<chemin absolu hôte du zip d'audit>")
 
 ## Règles de conduite
