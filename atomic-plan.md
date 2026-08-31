@@ -153,6 +153,34 @@ skills et serveurs MCP présents et exploitables dans la session :
   Les tools que tu as (read, grep, glob, bash, question…) suffisent pour analyser
   le code et produire des étapes précises.
 
+## Exploitation des tâches liées (v0.6.0)
+
+Si le contexte fournit un `taskId`, récupère la tâche via le MCP
+`task-orchestrator` : `task_get(taskId)` → champ **`linkedTasks`** (tâches
+associées + **nature de la liaison**, ex. « c'est là que le package a été
+créé »).
+
+Pour **chaque tâche liée** (c'est une SOURCE d'information, pas une tâche à
+re-traiter), exploite les données qui l'accompagnent pour rendre tes étapes
+précises et cohérentes avec le contexte réel :
+
+- **Commits** : `task_get(linkedTaskId)` (champ `planCommits`) ou
+  `plan_commits_list(planId)` — fichiers touchés, messages, diffs → réutilise
+  les conventions/chemins, repère ce qui existe déjà.
+- **Étapes de plan suivies** : MCP `plan-manager` (`plan_get`, `progress_get`)
+  pour les plans de la tâche liée — quelles étapes ont été faites, dans quel
+  ordre, quels livrables.
+- **Docs / résumés attachés** : `artifact_list(linkedTaskId)` (kind plan/audit/
+  report) — lire les artefacts pour comprendre ce qui a été produit.
+- **Déroulé** : `events_list(linkedTaskId)` (transitions, décisions, blocages)
+  pour le contexte global.
+
+Utilise ces informations pour : situer précisément les fichiers/emplacements
+(référencer les commits/docs dans le plan), éviter les conflits avec le travail
+déjà fusionné, et justifier des étapes « en continuité de la tâche liée ».
+La nature de la liaison dit POURQUOI la tâche liée est pertinente — explicite-le
+dans le plan (section Contexte & raison d'être).
+
 ## Pipeline de planification
 
 Ton pipeline est **séquentiel** : chaque phase produit un artefact consommé par la
