@@ -36,6 +36,7 @@ Le MCP `task-orchestrator` est ton moteur déterministe. Outils :
 |---|---|
 | `task_register` | Créer une tâche (contexte + scope) → statut `queued`. Retourne `taskId` + `executionId`. |
 | `task_get` / `task_list` | Détail / liste des tâches et leur statut. |
+| `project_get` | Détail d'un projet (dont **`mainBranch`** — branche principale, garde de déploiement). |
 | `task_transition` | **Seule** voie de changement du statut de la TÂCHE (phases grossières). |
 | `plan_transition` / `plan_execution_create` | Piloter le cycle de vie d'un PLAN (sous-tâche) : `planned → in_progress → … → done`. |
 | `plan_commits_list` / `plan_commit_add` | Lire / enregistrer la **trace des commits** d'un plan (append-only, fichiers + diff). Produite par `build-notify`, tu la consultes pour suivre l'exécution. |
@@ -96,7 +97,10 @@ plus `blocked/failed/aborted/crashed/rework`).
 
 ### 7-8. Synchronisation
 - La branche dédiée est créée par l'agent exécutant (`session-guard`), pas par toi.
-- Vérifie l'état git (dirty/conflit) ; pull depuis la source de référence du projet.
+- **Récupère la branche principale du projet** : `project_get(project="<projet>")` →
+  champ `mainBranch`. Vérifie l'état git (dirty/conflit) puis **`git pull` depuis
+  la branche principale** (`origin/<mainBranch>`) AVANT de déléguer l'exécution
+  (l'agent exécutant fera de même avant de pousser).
 - Sync impossible → `task_transition(to="blocked")` + `task_event`, stop.
 
 ### 9. Déléguer (feature / debug / audit sur demande)
@@ -200,6 +204,15 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
   `rejected` → `plan_transition(planId, to="rework")`.
 
 ### 12. Déployer (CI/CD uniquement, par plan)
+- **GARDE OBLIGATOIRE — branche principale** : AVANT tout déploiement,
+  `project_get(project="<projet>")` et vérifie que **`mainBranch` est définie**.
+  - Si absente → **aucun déploiement autorisé** : `task_transition(to="blocked")`
+    + `task_event(BLOCKED, cause="branche principale non définie")` + informe
+    l'utilisateur (définir la branche principale dans le panneau → Projets →
+    Modifier). Ne pousse jamais vers git sans branche principale.
+- **Avant de pousser** vers git (workflow de déploiement), **`git pull` depuis la
+  branche principale** (`origin/<mainBranch>`) pour intégrer les derniers
+  changements, puis résoudre les éventuels conflits AVANT le push.
 - **Par sous-tâche mergée** (pas en bloc) : `plan_transition(planId, to="deploy_pending")` ;
   `deployment_record(taskId, status="deploy_pending")`.
 - Déclenche le déploiement via le pipeline CI/CD du projet (skill `oniria-package-deploiement`

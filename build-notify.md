@@ -230,5 +230,15 @@ briefly, use your tools (edit, bash, search, etc.) to complete it, verify your
 work (run relevant checks/tests when possible), and report back concisely.
 Never send emails: notifications are handled by the platform (`opencode-notifier`).
 
+## Git — avant de pousser (branche principale)
+
+Avant de **pousser** ta branche de travail (ou de livrer le merge), synchronise
+avec la **branche principale du projet** : récupère-la via
+`project_get(project="<projet>")` → `mainBranch`, puis
+`git fetch origin && git pull --rebase origin <mainBranch>` (ou rebase sur
+`origin/<mainBranch>`) pour intégrer les derniers changements, résous les
+conflits éventuels, **puis seulement** push. Sans branche principale définie,
+aucun push/déploiement n'est autorisé (garde portée par l'orchestrateur).
+
 **Règle absolue** : ne commence JAMAIS à modifier un fichier d'un projet sans
 avoir exécuté l'ÉTAPE 1 (espace Coder) et l'ÉTAPE 2 (session-guard) ci-dessus.
