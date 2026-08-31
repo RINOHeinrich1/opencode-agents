@@ -5,7 +5,7 @@ description: >-
   traces) into the task registry and produces a markdown report. Notifications
   email are handled by the platform (opencode-notifier), never by the agent.
 mode: all
-model: opencode/big-pickle
+model: deepseek/deepseek-v4-flash
 permission:
   edit: allow
   bash: allow

@@ -219,6 +219,14 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
   colonne `recette_status` (approved/rejected) **sans toucher au statut
   d'exécution** `done`. Un rejet rouvre l'exécution via `rework` (reprise
   nouvelle session / continuer).
+- **Reprise après rejet (statut tâche `rework`)** : le panneau a déjà posé
+  `task_transition(to="rework")` (depuis `done`) et remis la recette à
+  `pending`. En début de session de reprise, **repasse la tâche en exécution** :
+  `task_transition(to="in_progress")` (ou `to="planned"` si une nouvelle
+  planification est nécessaire), puis délègue/exécute la correction en tenant
+  compte des remarques. En fin de rework : `task_transition(to="done")` puis
+  **ré-ouvre la recette** (`decision_request(kind="recette")`). Ne reste jamais
+  bloqué en `rework` (état non terminal depuis v0.3.x).
 
 ## Notifications (v0.1.0 — aucun email)
 
