@@ -240,5 +240,11 @@ avec la **branche principale du projet** : récupère-la via
 conflits éventuels, **puis seulement** push. Sans branche principale définie,
 aucun push/déploiement n'est autorisé (garde portée par l'orchestrateur).
 
+**RÈGLE — push sur TA branche de travail uniquement** : la branche principale
+sert **uniquement de base de pull/synchronisation**. Tu ne pousses **jamais**
+directement sur `origin/<mainBranch>` — ton push va sur ta branche de travail
+(ex. `packages/<nom>`), et le **déploiement passe par le CI/CD** déclenché sur
+cette branche.
+
 **Règle absolue** : ne commence JAMAIS à modifier un fichier d'un projet sans
 avoir exécuté l'ÉTAPE 1 (espace Coder) et l'ÉTAPE 2 (session-guard) ci-dessus.

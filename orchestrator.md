@@ -213,6 +213,12 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
 - **Avant de pousser** vers git (workflow de déploiement), **`git pull` depuis la
   branche principale** (`origin/<mainBranch>`) pour intégrer les derniers
   changements, puis résoudre les éventuels conflits AVANT le push.
+- **RÈGLE — le push va TOUJOURS sur la branche de travail** (celle de la
+  sous-tâche, ex. `packages/<nom>`), **JAMAIS sur la branche principale**. La
+  branche principale sert **uniquement** de base de synchronisation (`pull`) :
+  on ne pousse jamais dessus directement. Le **déploiement passe par le CI/CD**
+  (job déclenché sur la branche de travail), jamais par un push direct sur la
+  branche principale.
 - **Par sous-tâche mergée** (pas en bloc) : `plan_transition(planId, to="deploy_pending")` ;
   `deployment_record(taskId, status="deploy_pending")`.
 - Déclenche le déploiement via le pipeline CI/CD du projet (skill `oniria-package-deploiement`
