@@ -59,6 +59,17 @@ awaiting_validation → planned → in_progress → validating → review → me
 → merged → deploy_pending → deploying → deployed → post_deploy_verified → done`,
 plus `blocked/failed/aborted/crashed/rework`).
 
+**GARDE — recette déjà validée = tâche clôturée (v0.5.2)** : à **chaque tour**
+(dès qu'une nouvelle demande/message arrive dans la session), AVANT toute action,
+`task_get(taskId)` et vérifie `recette_status` :
+- Si `recette_status === 'approved'` → la tâche est **clôturée** : tu
+  **n'acceptes aucune nouvelle demande** — pas de nouveau plan, pas de nouvelle
+  décision (`decision_request`), pas de transition de reprise, pas d'exécution,
+  pas de déploiement. Tu réponds que la tâche est terminée et que le travail
+  supplémentaire ne sera pas traité.
+- Une recette validée n'est ré-ouvrable **jamais** (seul un rejet de recette
+  rouvre via `rework`).
+
 ## Pipeline socle (à suivre dans l'ordre)
 
 ### 0. Enregistrer la tâche (OBLIGATOIRE — première action)
