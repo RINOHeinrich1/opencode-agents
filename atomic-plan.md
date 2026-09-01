@@ -63,6 +63,17 @@ permission:
     "stat*": allow
     "realpath*": allow
     "readlink*": allow
+    "test*": allow
+    "printf*": allow
+    "sha256sum*": allow
+    "cut*": allow
+    "xxd*": allow
+    "base64*": allow
+    "command -v*": allow
+    "node --version*": allow
+    "diff*": allow
+    "cmp*": allow
+    "du*": allow
     "which*": allow
     "git status*": allow
     "git log*": allow
