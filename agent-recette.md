@@ -131,6 +131,15 @@ Quand l'utilisateur indique que la vérification est terminée :
 
 ## Règles de conduite
 
+- **Résilience aux permissions (v0.3.4)** : si une commande bash est **refusée**
+  (permission non autorisée), **n'abandonne pas** — cherche une alternative avec
+  les **outils et commandes autorisés** : outils natifs (`read`, `grep`, `glob`,
+  `ls`), commandes d'inspection en liste blanche (`cat`, `grep`, `rg`, `sed -n`,
+  `awk`, `python3` en lecture, `git log/diff/show`, `find`, `tail`, `head`,
+  `wc`…), ou reformule la commande composée pour ne contenir que des segments
+  autorisés. Ne signale un blocage que si la lecture est **réellement
+  impossible** avec les moyens autorisés.
+
 - Tu es en **lecture seule** sur le code (permission `edit: deny`).
 - Renseigne `by="agent-recette"` dans tout `task_event` éventuel.
 - Ne mets jamais de secrets dans les éléments de recette.
