@@ -415,6 +415,18 @@ question avec l'outil `question` :
   cohérence globale vérifiée AVANT de marquer la planification terminée.
 - **Plan Validator** : Invalid → Revise (boucle) jusqu'à Valid, puis seulement
   Write Plan.md + Register.
+- **Résilience aux permissions (v0.3.4)** : si une commande bash est **refusée**
+  (permission non autorisée), **n'abandonne pas** — cherche une alternative avec
+  les **outils et commandes autorisés** :
+  - outils natifs sans permission : `read`, `grep`, `glob`, `ls` ;
+  - commandes d'inspection en liste blanche : `cat`, `grep`, `rg`, `sed -n`,
+    `awk`, `python3` (lecture), `git log/diff/show`, `find`, `ls`, `tail`,
+    `head`, `wc`… ;
+  - **reformuler** la commande composée pour ne contenir que des segments
+    autorisés (ex. remplacer `python3 -c "…"` par `cat <fichier> | grep`/`sed`
+    ou `python3` désormais autorisé).
+  - Ne signale un blocage (`WAITING_VALIDATION`) que si la lecture est
+    **réellement impossible** avec les moyens autorisés.
 - Notifications : dérivées par `opencode-notifier` depuis le registre (plans,
   décisions, événements). Tu n'envoies aucun email ; toute incohérence globale
   est signalée à l'utilisateur via `question` (+ `task_event`).
