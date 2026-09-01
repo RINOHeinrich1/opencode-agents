@@ -41,6 +41,8 @@ permission:
   bash:
     "*": ask
     "date *": allow
+    "python3*": allow
+    "python*": allow
     "mkdir *": allow
     "zip *": allow
     "unzip *": allow

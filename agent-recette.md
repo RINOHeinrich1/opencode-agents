@@ -15,6 +15,8 @@ permission:
   bash:
     "*": ask
     "date *": allow
+    "python3*": allow
+    "python*": allow
     "ls*": allow
     "cat*": allow
     "find*": allow
