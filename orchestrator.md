@@ -115,7 +115,16 @@ plus `blocked/failed/aborted/crashed/rework`).
 - Sync impossible → `task_transition(to="blocked")` + `task_event`, stop.
 
 ### 9. Déléguer (feature / debug / audit sur demande)
-- **Feature / debug** :
+- **EXÉCUTION DIRECTE (v0.8.14)** : si `task_get` montre `directExecution=true`
+  (tâche feature/debug simple, sans planification) :
+  - **ne délègue PAS à atomic-plan** et ne crée **aucune** décision de validation
+    de plans ;
+  - `task_transition(to="planned")` puis `task_transition(to="in_progress")` ;
+  - délègue **directement à `build-notify`** (tool `task`, subagent
+    `build-notify`) avec `taskId` + `executionId` — la **demande** est le
+    travail à exécuter (pas de plan).
+  - La suite (review/merge/déploiement/recette) reste inchangée.
+- **Feature / debug (mode planifié)** :
   1. Amène la tâche en `planning` : si le statut est encore `queued`,
      `task_transition(to="started")` (démarrage) ; puis `task_transition(to="planning")`.
      Le statut `started` est normalement déjà posé par le panneau au lancement :
