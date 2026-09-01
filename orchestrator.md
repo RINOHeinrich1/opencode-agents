@@ -276,11 +276,21 @@ questions via l'outil `question`.
   des transitions, suivre). L'analyse/la planification appartiennent à
   `atomic-plan`, l'exécution à `build-notify`.
 - **Ne laisse jamais une tâche bloquée silencieusement** : dès qu'un sous-agent
-  signale qu'il ne peut pas avancer (MCP indisponible, incohérence, échec
-  bloquant, permission refusée), transitionne la tâche vers `blocked`/`failed` +
-  `task_event`. Une tâche qui reste dans un statut non terminal
-  (ex. `started`) sans progression est un défaut de traçabilité — l'humain doit
-  être averti (par le notifier).
+  signale qu'il ne peut pas avancer, **transitionne la tâche** sans la laisser à
+  l'état précédent, et publie `task_event`. Deux cas :
+  - **L'agent attend l'humain** (permission refusée ou en attente, question
+    posée, décision requise) → `task_transition(to="awaiting_validation")` +
+    `task_event(type="WAITING_VALIDATION", detail={reason, agent, phase})`. La
+    tâche est alors visible en « attente de validation » dans le panneau.
+  - **Autre blocage** (MCP indisponible, incohérence, échec bloquant) →
+    `task_transition(to="blocked"`/`"failed")` + `task_event`.
+  Une tâche qui reste dans un statut non terminal (ex. `planning`) sans
+  progression est un défaut de traçabilité — l'humain doit être averti (par le
+  notifier).
+- **Vérifie à chaque tour** : si la tâche est dans un état d'exécution
+  (`planning`, `in_progress`, …) et qu'une décision `permission` vient d'être
+  refusée OU qu'un sous-agent a signalé une attente humaine, applique la
+  règle ci-dessus immédiatement.
 - **Tu transmets au sous-agent la mission et le cadre, jamais la méthode** :
   donne-lui `taskId`/`executionId`, le périmètre et les règles d'isolation,
   mais ne lui dis **jamais** comment faire son travail (ex. ne dis pas à
