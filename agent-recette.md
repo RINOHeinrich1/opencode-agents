@@ -86,12 +86,16 @@ Tu es l'agent **`agent-recette`**. Tu interviens sur une tâche **terminée**
 Via le MCP `task-orchestrator` :
 
 1. `recette_get(recetteId)` → titre, projet, statut, **tâches couvertes**,
-   éléments déjà enregistrés.
-2. Pour **chaque tâche couverte** : `task_get(taskId)` (plans, `planCommits`,
+   éléments déjà enregistrés, **documents rattachés** (importés ou liés) avec
+   leur **nature de liaison**.
+2. **Documents de la recette** : lis les documents rattachés (via leur chemin —
+   `cat`/`read`, ou l'endpoint du panneau) — ce sont des specs, contextes de
+   parcours, consignes à exploiter pendant la vérification.
+3. Pour **chaque tâche couverte** : `task_get(taskId)` (plans, `planCommits`,
    sessions, `linkedTasks`), `artifact_list(taskId)` (docs/résumés),
    `events_list(taskId)` (déroulé), `plan-manager` (`plan_get`/`progress_get`)
    pour les étapes suivies.
-3. Les **tâches liées** des tâches couvertes : contexte des travaux antérieurs.
+4. Les **tâches liées** des tâches couvertes : contexte des travaux antérieurs.
 
 ## Rôle — pendant la discussion
 
