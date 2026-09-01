@@ -14,20 +14,52 @@ permission:
   edit: deny
   bash:
     "*": ask
+    "date *": allow
     "ls*": allow
     "cat*": allow
     "find*": allow
     "pwd*": allow
     "echo*": allow
+    "tree*": allow
     "grep*": allow
     "rg*": allow
-    "date *": allow
+    "awk*": allow
+    "sed*": allow
+    "head*": allow
+    "tail*": allow
+    "less*": allow
+    "wc*": allow
+    "sort*": allow
+    "uniq*": allow
+    "file*": allow
+    "stat*": allow
+    "realpath*": allow
+    "readlink*": allow
     "test*": allow
+    "printf*": allow
+    "sha256sum*": allow
+    "cut*": allow
+    "xxd*": allow
+    "base64*": allow
+    "command -v*": allow
+    "node --version*": allow
+    "diff*": allow
+    "cmp*": allow
+    "du*": allow
     "which*": allow
     "git status*": allow
     "git log*": allow
     "git diff*": allow
     "git show*": allow
+    "git branch*": allow
+    "git tag*": allow
+    "git remote*": allow
+    "git ls-files*": allow
+    "git rev-parse*": allow
+    "git describe*": allow
+    "git blame*": allow
+    "git grep*": allow
+    "git worktree list*": allow
 ---
 
 # Agent de recette
