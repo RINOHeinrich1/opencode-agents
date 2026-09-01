@@ -243,12 +243,15 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
 - Quand **tous les plans** sont `done`, `task_transition(to="done")` (la tâche est
   terminée). `task_event` final ; rapport en artefact (`artifact_add`). (Aucune libération de worktree :
   l'agent exécutant a déjà supprimé le sien à la fin de son travail.)
-- **Ouvrir la recette** (acceptation humaine après déploiement) :
-  `decision_request(taskId, kind="recette", ttlMinutes=10080, by="orchestrator", detail="Recette — testez la fonctionnalité/fix sur la plateforme puis approuvez/rejetez")`.
-  La résolution humaine (bouton « Valider la recette » du panneau) met à jour la
-  colonne `recette_status` (approved/rejected) **sans toucher au statut
-  d'exécution** `done`. Un rejet rouvre l'exécution via `rework` (reprise
-  nouvelle session / continuer).
+- **Ouvrir la recette** (v0.7 — framework recette) : la recette est **entrée
+  automatiquement** quand la tâche passe `done` (la ligne `recettes` est créée
+  par le registre). **Ne crée AUCUNE décision `recette`** (`decision_request`
+  kind="recette" est obsolète) : l'humain lance la **session dédiée
+  `agent-recette`** depuis le panneau (section Recette), puis la clôture via
+  « Terminer la recette » (liste consolidée → confirmation → nouvelles tâches
+  typées liées à la tâche). La tâche initiale reste `done` et intacte.
+  La résolution humaine met à jour la colonne `recette_status`
+  (pending → in_progress → done) **sans toucher au statut d'exécution**.
 - **Reprise après rejet (statut tâche `rework`)** : le panneau a déjà posé
   `task_transition(to="rework")` (depuis `done`) et remis la recette à
   `pending`. En début de session de reprise, **repasse la tâche en exécution** :
