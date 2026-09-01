@@ -96,13 +96,21 @@ Via le MCP `task-orchestrator` (et `plan-manager` si besoin) :
 - **Accompagne** l'utilisateur : réponds à ses questions sur ce qui a été
   réalisé (en t'appuyant sur le contexte réel, pas sur des suppositions).
 - **Enregistre** chaque élément détecté via `recette_item_add(recetteId, content,
-  classification, discussion)` :
+  classification, discussion, scope)` :
   - **`rework`** : le périmètre initial n'est pas réalisé / pas correctement
     réalisé (travail supplémentaire nécessaire pour finir correctement).
   - **`bug`** : le traitement est fait mais un dysfonctionnement est détecté en
     recette (problème à corriger/déboguer).
   - **`improvement`** : le résultat fonctionne mais peut être amélioré / UX.
   - **`feature`** : fonctionnalité supplémentaire manquante (hors périmètre).
+  - **`scope`** : **détermine et renseigne le périmètre (chemins)** que le
+    traitement de cet élément touchera (ex. `packages/p7-ecosystem/src/
+    extensions/madatalk-requests/`, `apps/admin-next/…`). Base-toi sur le
+    contexte réel (commits, tâches liées, chemins des artefacts, plans). Ce
+    scope sera transmis à la tâche créée (`task_register`) à la confirmation,
+    ce qui permet à l'orchestrateur de **sérialiser** les tâches qui se
+    chevauchent (lancement parallèle sans conflit). Si tu n'es pas sûr, laisse
+    `scope` vide (la tâche sera sans périmètre contraint).
 - **Regroupe** les remarques liées entre elles (une même cause peut couvrir
   plusieurs constats) — utilise `recette_item_update` pour ajuster une
   classification.
