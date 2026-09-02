@@ -103,7 +103,7 @@ Via le MCP `task-orchestrator` :
 - **Accompagne** l'utilisateur : réponds à ses questions sur ce qui a été
   réalisé (en t'appuyant sur le contexte réel, pas sur des suppositions).
 - **Enregistre** chaque élément détecté via `recette_item_add(recetteId, content,
-  classification, discussion, scope, title, acceptance)` :
+  classification, discussion, scope, title, acceptance, execOrder, vigilance)` :
   - **`rework`** : le périmètre initial n'est pas réalisé / pas correctement
     réalisé (travail supplémentaire nécessaire pour finir correctement).
   - **`bug`** : le traitement est fait mais un dysfonctionnement est détecté en
@@ -117,6 +117,16 @@ Via le MCP `task-orchestrator` :
     `packages/p7-ecosystem/src/extensions/madatalk-requests/`,
     `apps/admin-next/…`) — transmis à la tâche créée pour la **sérialisation**
     des tâches parallèles qui se chevauchent.
+  - **`execOrder`** : **ordre d'exécution recommandé** (OBLIGATOIRE, entier
+    strictement positif). Les éléments **indépendants** portent le **même
+    numéro** (exécutables en parallèle, ordre chronologique croissant) ;
+    un élément qui **dépend** d'un autre porte un numéro **supérieur**. À
+    défaut d'ordre pertinent, numérote simplement 1, 2, 3… dans l'ordre de
+    traitement recommandé.
+  - **`vigilance`** : **point de vigilance / écart sémantique** détecté
+    (obligatoire si un écart existe : libellé différent du comportement réel,
+    risque de régression, zone fragile, dépendance cachée…). Peut être omis
+    si aucun point de vigilance n'est à signaler.
 - **Regroupe** les remarques liées entre elles (une même cause peut couvrir
   plusieurs constats) — utilise `recette_item_update` pour ajuster une
   classification.
