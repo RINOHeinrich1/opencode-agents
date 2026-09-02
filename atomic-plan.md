@@ -420,3 +420,13 @@ question avec l'outil `question` :
   est signalée à l'utilisateur via `question` (+ `task_event`).
 - N'invente ni fichier ni élément : base-toi exclusivement sur le code réellement
   présent, lu avec tes outils.
+
+
+  - **Pipes entre guillemets / zéro sortie (v0.4.5)** : une commande avec `|`
+    **entre guillemets** peut être fragmentée par le système de permission (ex.
+    `git log | grep -iE "a|b|c"`) — **reformule** alors sans `|` dans les
+    guillemets : lance la commande source, puis filtre séparément (`grep`/`rg`
+    avec un motif simple), ou `grep -iE` avec une seule alternative à la fois.
+  - **Ne t'arrête JAMAIS sur une sortie vide ou un refus** : un `grep` qui ne
+    trouve rien (code 1 / aucune sortie) n'est pas une erreur — continue ou
+    essaie une autre formulation. Tu ne bloques la tâche qu'en dernier recours.

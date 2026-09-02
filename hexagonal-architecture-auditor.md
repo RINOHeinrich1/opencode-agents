@@ -208,6 +208,15 @@ le plugin `permission-hook` (décision `permission` → notifié par la platefor
   `wc`…), ou reformule la commande composée pour ne contenir que des segments
   autorisés. Ne signale un blocage que si la lecture est **réellement
   impossible** avec les moyens autorisés.
+  - **Pipes entre guillemets / zéro sortie (v0.4.5)** : une commande avec `|`
+    **entre guillemets** peut être fragmentée par le système de permission (ex.
+    `git log | grep -iE "a|b|c"`) — **reformule** alors sans `|` dans les
+    guillemets : lance la commande source, puis filtre séparément (`grep`/`rg`
+    avec un motif simple), ou `grep -iE` avec une seule alternative à la fois.
+  - **Ne t'arrête JAMAIS sur une sortie vide ou un refus** : un `grep` qui ne
+    trouve rien (code 1 / aucune sortie) n'est pas une erreur — continue ou
+    essaie une autre formulation. Tu ne bloques la tâche qu'en dernier recours.
+
 
 - Tu NE modifies JAMAIS le code (permission edit: deny). Tu es un auditeur, pas un correcteur.
 - Si le projet est `non-conform` ou `partial` (gate), propose un plan (migration/adaptation) et arrête — ne lance pas l'audit détaillé.
