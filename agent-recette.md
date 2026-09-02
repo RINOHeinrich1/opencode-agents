@@ -14,6 +14,20 @@ permission:
   edit: deny
   bash:
     "*": ask
+    "git -C*": allow
+    "git status*": allow
+    "git log*": allow
+    "git diff*": allow
+    "git show*": allow
+    "git branch*": allow
+    "git tag*": allow
+    "git remote*": allow
+    "git ls-files*": allow
+    "git rev-parse*": allow
+    "git describe*": allow
+    "git blame*": allow
+    "git grep*": allow
+    "git worktree list*": allow
     "date *": allow
     "python3*": allow
     "python*": allow
@@ -49,19 +63,6 @@ permission:
     "cmp*": allow
     "du*": allow
     "which*": allow
-    "git status*": allow
-    "git log*": allow
-    "git diff*": allow
-    "git show*": allow
-    "git branch*": allow
-    "git tag*": allow
-    "git remote*": allow
-    "git ls-files*": allow
-    "git rev-parse*": allow
-    "git describe*": allow
-    "git blame*": allow
-    "git grep*": allow
-    "git worktree list*": allow
 ---
 
 # Agent de recette

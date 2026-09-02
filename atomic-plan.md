@@ -39,6 +39,20 @@ permission:
     "reports/**": allow
   bash:
     "*": ask
+    "git -C*": allow
+    "git status*": allow
+    "git log*": allow
+    "git diff*": allow
+    "git show*": allow
+    "git branch*": allow
+    "git tag*": allow
+    "git remote*": allow
+    "git ls-files*": allow
+    "git rev-parse*": allow
+    "git describe*": allow
+    "git blame*": allow
+    "git grep*": allow
+    "git worktree list*": allow
     "date *": allow
     "python3*": allow
     "python*": allow
@@ -77,42 +91,6 @@ permission:
     "cmp*": allow
     "du*": allow
     "which*": allow
-    "git status*": allow
-    "git log*": allow
-    "git diff*": allow
-    "git show*": allow
-    "git branch*": allow
-    "git tag*": allow
-    "git remote*": allow
-    "git ls-files*": allow
-    "git rev-parse*": allow
-    "git describe*": allow
-    "git blame*": allow
-    "git grep*": allow
-    "git worktree list*": allow
-    "git shortlog*": allow
-    "git merge-base*": allow
-    "git rev-list*": allow
-    "git cat-file*": allow
-    "git for-each-ref*": allow
-    "git -C * status*": allow
-    "git -C * log*": allow
-    "git -C * diff*": allow
-    "git -C * show*": allow
-    "git -C * branch*": allow
-    "git -C * tag*": allow
-    "git -C * remote*": allow
-    "git -C * ls-files*": allow
-    "git -C * rev-parse*": allow
-    "git -C * describe*": allow
-    "git -C * blame*": allow
-    "git -C * grep*": allow
-    "git -C * worktree list*": allow
-    "git -C * shortlog*": allow
-    "git -C * merge-base*": allow
-    "git -C * rev-list*": allow
-    "git -C * cat-file*": allow
-    "git -C * for-each-ref*": allow
   question: ask
   external_directory:
     "*": ask
