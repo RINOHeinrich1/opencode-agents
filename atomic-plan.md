@@ -91,6 +91,13 @@ permission:
     "cmp*": allow
     "du*": allow
     "which*": allow
+    "xargs grep*": allow
+    "xargs -0 grep*": allow
+    "git ls-tree*": allow
+    "git cat-file*": allow
+    "git show-ref*": allow
+    "git for-each-ref*": allow
+    "node -e*": allow
   question: ask
   external_directory:
     "*": ask
@@ -387,6 +394,14 @@ question avec l'outil `question` :
     clés/tokens, `*.pem`, tout fichier contenant `secret`/`token`/`password`).
   Limite la lecture du filesystem au **code/documentation du projet** (sous le
   workspace du projet), en préférant `read`/`grep`/`glob`.
+
+- **Exploration en lecture seule (v0.4.7)** : privilégie les outils `read`/
+  `grep`/`glob` (aucune permission requise). Pour une commande bash, lance des
+  **commandes simples et unitaires** (une seule commande par appel, préfixée par
+  une règle autorisée : `grep…`, `find…`, `git log…`, `node -e…`…). **Évite les
+  pipelines composés** (`… | xargs …`, `… && …`) qui exigent une permission
+  « ask » → en session headless elle est **auto-refusée** (fail-closed) et la
+  planification échoue.
 
 - Tu es un **planificateur** : tu n'édites JAMAIS le code du projet. Tu écris
   uniquement des fichiers de plan (`plans/*.md`) et de synthèse (`reports/*.md`).
