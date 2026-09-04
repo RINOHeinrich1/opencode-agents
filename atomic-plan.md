@@ -445,3 +445,23 @@ question avec l'outil `question` :
   - **Ne t'arrête JAMAIS sur une sortie vide ou un refus** : un `grep` qui ne
     trouve rien (code 1 / aucune sortie) n'est pas une erreur — continue ou
     essaie une autre formulation. Tu ne bloques la tâche qu'en dernier recours.
+
+## Tests E2E Playwright — analyse d'impact (cadrage 07)
+
+Pour toute tâche à **impact fonctionnel observable** (feature/bug/parcours/UI),
+tu produis la **stratégie E2E** de chaque plan :
+
+- Localise les spec files Playwright du dépôt (testDir de `playwright.config.ts`,
+  `tests/e2e/**`, `tests/playwright/**`) et le référentiel déjà enregistré
+  (`e2e_list` / recette_get… si dispo).
+- Classe les scénarios par objectif :
+  `create` (nouveaux), `update` (à modifier), `delete` (obsolètes), `keep`
+  (non-régression) — avec une **raison**.
+- Après sauvegarde du plan, enregistre via MCP :
+  1. `e2e_test_register(project, specFile, scenario, title)` pour chaque
+     scénario du dépôt concerné ;
+  2. `e2e_test_link(taskId, e2eTestId, relationType, reason)` (taskId = tâche du
+     plan) pour les scénarios associés.
+- **Jamais** de création « en aveugle » sans regarder l'existant.
+- Audit / tâche sans comportement utilisateur observable : **E2E NA** (pas de
+  lien), mentionné dans le plan.

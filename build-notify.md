@@ -248,3 +248,24 @@ cette branche.
 
 **Règle absolue** : ne commence JAMAIS à modifier un fichier d'un projet sans
 avoir exécuté l'ÉTAPE 1 (espace Coder) et l'ÉTAPE 2 (session-guard) ci-dessus.
+
+## Tests E2E Playwright — preuve et verdict (cadrage 07)
+
+Si la tâche a des tests E2E associés (`e2e_list(taskId)` non vide) :
+
+- Le CI (instance éphémère, webServer) exécute les tests du run ; quand le run
+  est prêt, **importe-le** via `e2e_collect(runId)` (rapports écrits par le
+  runner dans `storage/e2e/inbox/`).
+- Lis le verdict **depuis le registre uniquement** (`e2e_list` /
+  `e2e_execution_list`) : **rapport texte** (logs, erreurs, étapes). Puis :
+  - **PASS** → la preuve texte est rattachée (continue le cycle) ;
+  - **FAIL** → analyse le rapport **texte**, corrige et relance (**3 itérations
+    max**) ; au-delà ou si la résolution exige autorisation/intervention humaine
+    → **décision humaine** (`decision_request`) + événement tracé, jamais de
+    validation silencieuse ;
+  - échec **non explicable par le texte** → état « nécessite analyse humaine
+    (vidéo) », **sans auto-diagnostic**.
+- Règle IA : tu ne traites **que le texte** ; la **vidéo** est une preuve pour
+  l'**humain** (jamais interprétée par toi).
+- Statut E2E séparé du statut tâche : tu ne modifies pas la machine à états
+  principale pour l'E2E.
