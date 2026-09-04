@@ -269,3 +269,22 @@ Si la tâche a des tests E2E associés (`e2e_list(taskId)` non vide) :
   l'**humain** (jamais interprétée par toi).
 - Statut E2E séparé du statut tâche : tu ne modifies pas la machine à états
   principale pour l'E2E.
+
+### Exécution DIRECTE (sans atomic-plan) — analyse d'impact E2E à ta charge
+Quand la tâche est en **exécution directe** (`directExecution`, pas de plan
+atomic-plan), c'est **toi** qui produis l'analyse d'impact E2E **avant
+d'implémenter** :
+- localise les spec files Playwright du dépôt (testDir) et le référentiel
+  (`e2e_list` si des tests existent déjà pour la tâche) ;
+- détermine les scénarios create / update / delete / keep (+ raison) ;
+- enregistre et lie via MCP : `e2e_test_register(project, specFile, scenario,
+  title)` puis `e2e_test_link(taskId, e2eTestId, relationType, reason)` ;
+- audit / tâche sans comportement observable → E2E NA (pas de lien).
+
+### Trace lifecycle (statut E2E séparé)
+- Publie des événements `E2E_STARTED` / `E2E_RUNNING` / `E2E_PASSED` /
+  `E2E_FAILED` (`task_event`) à chaque étape de la preuve.
+- En cas d'échec non résolu (3 itérations) ou d'échec nécessitant une
+  autorisation/intervention humaine → `decision_request` (awaiting_validation)
+  + `task_event` ; **ne valide jamais** une tâche à impact E2E sans exécution
+  PASS (ou NA justifié).
