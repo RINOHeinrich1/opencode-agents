@@ -103,7 +103,12 @@ Via le MCP `task-orchestrator` :
 - **Accompagne** l'utilisateur : réponds à ses questions sur ce qui a été
   réalisé (en t'appuyant sur le contexte réel, pas sur des suppositions).
 - **Enregistre** chaque élément détecté via `recette_item_add(recetteId, content,
-  classification, discussion, scope, title, acceptance, execOrder, vigilance)` :
+  classification, project, discussion, scope, title, acceptance, execOrder, vigilance)` :
+  - Une recette peut couvrir **un ou plusieurs projets** (`recette_get` →
+    `recettes[].projects`) — **il n'y a pas de projet principal**.
+  - **`project`** : **projet CIBLE de l'élément** (OBLIGATOIRE, parmi les projets
+    de la recette) — c'est dans ce projet que la future tâche sera créée à la
+    clôture. Un élément est rattaché à **exactement un projet**.
   - **`rework`** : le périmètre initial n'est pas réalisé / pas correctement
     réalisé (travail supplémentaire nécessaire pour finir correctement).
   - **`bug`** : le traitement est fait mais un dysfonctionnement est détecté en
