@@ -190,22 +190,27 @@ Quand l'utilisateur indique que la vérification est terminée :
   est d'enregistrer l'élément puis de créer une tâche à la clôture de la recette
   (la tâche initiale n'est jamais modifiée).
 
-## Tests E2E (cadrage 07) — preuve scénario ↔ code réel
+## Tests E2E (cadrage 08) — preuve scénario ↔ code réel
 
-Les tâches couvertes peuvent avoir des tests E2E associés et des exécutions
-prouvées. Pour chaque tâche couverte (feature/bug) :
+Les tests E2E sont des **entités de 1er niveau** (indépendantes des tâches) ; les
+tâches couvertes peuvent y être associées et porter des exécutions prouvées.
+Pour chaque tâche couverte (feature/bug) :
 
 1. **`e2e_list(taskId)`** : liste les tests associés (scénario, spec file,
    relation, dernière exécution).
-2. **`e2e_execution_list({ taskId })`** : lit les exécutions et leur **rapport
+2. **`e2e_execution_list({ e2eTestId })`** (historique du test) ou
+   `e2e_execution_list({ taskId })` : lit les exécutions et leur **rapport
    texte** (`summary`, erreurs, logs) pour vérifier que le **scénario E2E
    correspond au comportement réel** de la tâche.
 3. Si la preuve est absente, obsolète ou **contredit le constat** → enregistre un
    élément (bug / rework) avec la référence (scénario, exécution) en `reason` ;
    ne te contente pas du simple fait que « des tests existent ».
 4. **Déclenchement (si pertinent)** : tu peux lancer un run de vérification avec
-   `e2e_run(project, repoDir, baseUrl, taskId)` — le verdict lu est le **rapport
-   texte** généré ; compare-le au scénario attendu.
+   `e2e_run(project, repoDir, baseUrl, e2eTestId?, origin="recette", taskId?)` —
+   passe l'`e2eTestId` (entité) pour un test donné, ou `specPattern` pour un
+   run libre ; **origine `recette`** (ne jamais écraser l'origine task/CI d'une
+   exécution existante). Le verdict lu est le **rapport texte** généré ;
+   compare-le au scénario attendu.
 5. Règle IA : tu ne traites **que le texte** (rapport, logs, summary). La vidéo
    est une preuve pour l'**humain** — tu ne l'interprètes jamais et tu n'en tires
    aucun constat.

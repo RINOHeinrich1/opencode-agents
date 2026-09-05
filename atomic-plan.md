@@ -446,7 +446,7 @@ question avec l'outil `question` :
     trouve rien (code 1 / aucune sortie) n'est pas une erreur — continue ou
     essaie une autre formulation. Tu ne bloques la tâche qu'en dernier recours.
 
-## Tests E2E Playwright — analyse d'impact (cadrage 07)
+## Tests E2E Playwright — analyse d'impact (cadrage 08 : entités 1er niveau)
 
 Pour toute tâche à **impact fonctionnel observable** (feature/bug/parcours/UI),
 tu produis la **stratégie E2E** de chaque plan :
@@ -457,11 +457,20 @@ tu produis la **stratégie E2E** de chaque plan :
 - Classe les scénarios par objectif :
   `create` (nouveaux), `update` (à modifier), `delete` (obsolètes), `keep`
   (non-régression) — avec une **raison**.
-- Après sauvegarde du plan, enregistre via MCP :
-  1. `e2e_test_register(project, specFile, scenario, title)` pour chaque
-     scénario du dépôt concerné ;
-  2. `e2e_test_link(taskId, e2eTestId, relationType, reason)` (taskId = tâche du
-     plan) pour les scénarios associés.
+- **Le test est une entité de 1er niveau, indépendante de la tâche.** Après
+  sauvegarde du plan, enregistre via MCP, pour chaque scénario du dépôt concerné :
+  1. `e2e_test_register(project, specFile, scenario, title, description,
+     coveredProjects)` — `project` = **repo source** (où vit le spec) ;
+     `coveredProjects` = projets dont le comportement est vérifié (ex. le
+     frontend client madatalk ET le backend ONIRIA quand le scénario traverse
+     les deux) ; le repo source est toujours inclus.
+  2. `e2e_test_param_set(e2eTestId, params)` si le scénario a des paramètres
+     variables (URL/compte) — défauts non sensibles, `secretRef` pour les tokens.
+  3. `e2e_test_link(taskId, e2eTestId, relationType, reason)` UNIQUEMENT pour
+     associer le test à la tâche traitée (le test existe même sans lien).
+- Un test multi-projets = **une seule entité** (le spec vit dans un des repos,
+  la liste des projets couverts porte la dimension transverse) ; une exécution
+  unique couvre le comportement (paramètres par cible).
 - **Jamais** de création « en aveugle » sans regarder l'existant.
 - Audit / tâche sans comportement utilisateur observable : **E2E NA** (pas de
   lien), mentionné dans le plan.

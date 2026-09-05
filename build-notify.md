@@ -249,13 +249,19 @@ cette branche.
 **Règle absolue** : ne commence JAMAIS à modifier un fichier d'un projet sans
 avoir exécuté l'ÉTAPE 1 (espace Coder) et l'ÉTAPE 2 (session-guard) ci-dessus.
 
-## Tests E2E Playwright — preuve et verdict (cadrage 07)
+## Tests E2E Playwright — preuve et verdict (cadrage 08 : entités 1er niveau)
+
+Le test E2E est une **entité de 1er niveau**, indépendante des tâches ; une
+tâche n'en est qu'une **association possible** (`task_e2e`). Tu enregistres le
+test dès qu'un spec existe, tu l'exécutes **par test** avec une **origine**
+tracée (`task`/`recette`/`ci`/`manual`), et tu poses le verdict sur le **rapport
+texte**.
 
 Si la tâche a des tests E2E associés (`e2e_list(taskId)` non vide) :
 
-- Le CI (instance éphémère, webServer) exécute les tests du run ; quand le run
-  est prêt, **importe-le** via `e2e_collect(runId)` (rapports écrits par le
-  runner dans `storage/e2e/inbox/`).
+- Le CI / `e2e_run` exécute les tests du run ; quand le run est prêt, **importe-
+  le** via `e2e_collect(runId)` (rapports écrits par le runner dans
+  `storage/e2e/inbox/`) ou l'import auto de `e2e_run`.
 - Lis le verdict **depuis le registre uniquement** (`e2e_list` /
   `e2e_execution_list`) : **rapport texte** (logs, erreurs, étapes). Puis :
   - **PASS** → la preuve texte est rattachée (continue le cycle) ;
@@ -270,20 +276,34 @@ Si la tâche a des tests E2E associés (`e2e_list(taskId)` non vide) :
 - Statut E2E séparé du statut tâche : tu ne modifies pas la machine à états
   principale pour l'E2E.
 
+### Enregistrement « dès qu'un spec existe »
+Quand tu produis/modifies un spec (en planifié ou en direct) :
+- `e2e_test_register(project, specFile, scenario, title, description,
+  coveredProjects)` — `project` = repo source ; `coveredProjects` = projets du
+  comportement (le repo source est inclus) ; un test multi-projets = **une seule
+  entité** ;
+- `e2e_test_param_set(e2eTestId, params)` si paramètres variables (défauts non
+  sensibles, `secretRef` pour les tokens) ;
+- `e2e_test_link(taskId, e2eTestId, relationType, reason)` pour associer à la
+  tâche traitée. Le test **reste enregistré même si la tâche est abandonnée**.
+
 ### Exécution DIRECTE (sans atomic-plan) — analyse d'impact E2E à ta charge
 Quand la tâche est en **exécution directe** (`directExecution`, pas de plan
 atomic-plan), c'est **toi** qui produis l'analyse d'impact E2E **avant
 d'implémenter** :
 - localise les spec files Playwright du dépôt (testDir) et le référentiel
-  (`e2e_list` si des tests existent déjà pour la tâche) ;
+  (`e2e_list` si des tests existent déjà) ;
 - détermine les scénarios create / update / delete / keep (+ raison) ;
-- enregistre et lie via MCP : `e2e_test_register(project, specFile, scenario,
-  title)` puis `e2e_test_link(taskId, e2eTestId, relationType, reason)` ;
+- enregistre via `e2e_test_register` (+ param_set), puis `e2e_test_link` à la
+  tâche si associée ;
 - audit / tâche sans comportement observable → E2E NA (pas de lien).
 
 ### Trace lifecycle (statut E2E séparé)
 - Publie des événements `E2E_STARTED` / `E2E_RUNNING` / `E2E_PASSED` /
   `E2E_FAILED` (`task_event`) à chaque étape de la preuve.
+- Exécute **par test** avec origine : quand la tâche déclenche le run, `origin =
+  "task"` (ou `"recette"` si c'est l'agent-recette, `"manual"` sinon) via
+  `e2e_run`/`e2e_execution_record`.
 - En cas d'échec non résolu (3 itérations) ou d'échec nécessitant une
   autorisation/intervention humaine → `decision_request` (awaiting_validation)
   + `task_event` ; **ne valide jamais** une tâche à impact E2E sans exécution

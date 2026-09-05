@@ -249,7 +249,19 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
 - Échec → `plan_transition(planId, to="deploy_failed")` ; correctif/retry → `deploy_pending`.
 
 ### 13. Clôturer + ouvrir la recette
-- Quand **tous les plans** sont `done`, `task_transition(to="done")` (la tâche est
+- **Gate DOUX E2E (cadrage 08, décision T9)** : avant de clore une tâche
+  (`task_transition(to="done")`), si la tâche a des tests E2E liés
+  (`e2e_list(taskId)` non vide) et que **tous ne sont pas `PASSED`** (échec,
+  erreur, jamais exécuté) :
+  - interroge `e2e_list(taskId)` + `e2e_execution_list(taskId)` pour le constat ;
+  - pose une **décision humaine** (`decision_request`, kind `validation`,
+    detail = « tests E2E non passés (N) — clore la tâche quand même ? » avec la
+    liste test/statut) et **attends la résolution** avant de clore (jamais de
+    blocage automatique : si l'humain approuve la clôture malgré l'échec, clore ;
+    sinon laisser la tâche en cours / passer en rework selon le contexte) ;
+  - tests liés tous `PASSED` (ou E2E NA justifié pour audit/technique) → clôture
+    normale.
+- **Quand tous les plans** sont `done`, `task_transition(to="done")` (la tâche est
   terminée). `task_event` final ; rapport en artefact (`artifact_add`). (Aucune libération de worktree :
   l'agent exécutant a déjà supprimé le sien à la fin de son travail.)
 - **Ouvrir la recette** (v0.7 — framework recette) : la recette est **entrée
