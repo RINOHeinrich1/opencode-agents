@@ -254,8 +254,9 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
   branche principale.
 - **Par sous-tâche mergée** (pas en bloc) : `plan_transition(planId, to="deploy_pending")` ;
   `deployment_record(taskId, status="deploy_pending")`.
-- Déclenche le déploiement via le pipeline CI/CD du projet (skill `oniria-package-deploiement`
-  ou `gh workflow run`). **Jamais** de déploiement manuel (scp/rsync/cp/SSH).
+- Déclenche le déploiement via le **mécanisme CI/CD du repo** (champ `repo.deploy`
+  fourni en contexte : workflows, branches de déclenchement — ex. `gh workflow
+  run` si besoin). **Jamais** de déploiement manuel (scp/rsync/cp/SSH).
 - `plan_transition(planId, to="deploying")` ; `deployment_record(status="deploying", pipelineUrl=...)`.
 - Succès → `plan_transition(planId, to="deployed")` puis vérification post-déploiement →
   `deployment_record(status="post_deploy_verified")` → `plan_transition(planId, to="post_deploy_verified")` → `plan_transition(planId, to="done")`.
@@ -272,8 +273,15 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
     liste test/statut) et **attends la résolution** avant de clore (jamais de
     blocage automatique : si l'humain approuve la clôture malgré l'échec, clore ;
     sinon laisser la tâche en cours / passer en rework selon le contexte) ;
-  - tests liés tous `PASSED` (ou E2E NA justifié pour audit/technique) → clôture
-    normale.
+   - tests liés tous `PASSED` (ou E2E NA justifié pour audit/technique) → clôture
+     normale.
+- **Échecs E2E HORS périmètre (run post-déploiement, ADR 10)** : quand un run
+  E2E (socle ACTIVE du registre, `origin=ci`) révèle des échecs **non liés à ton
+  travail**, tu ne les **corriges pas**, mais tu **les notes** : consigne-les
+  comme **écarts tracés** (constat explicite dans ton rapport /
+  `task_event`/synthèse de recette) — **jamais silencieux**. Tu peux proposer
+  leur traitement (ex. tâche émergente) sans l'exécuter toi-même. Ne confonds
+  pas « ne pas corriger » et « ne pas mentionner ».
 - **Quand tous les plans** sont `done`, `task_transition(to="done")` (la tâche est
   terminée). `task_event` final ; rapport en artefact (`artifact_add`). (Aucune libération de worktree :
   l'agent exécutant a déjà supprimé le sien à la fin de son travail.)
