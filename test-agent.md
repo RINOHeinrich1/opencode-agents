@@ -161,6 +161,11 @@ le respect du cadre ci-dessous.
    injecter) et lis le **rapport texte** ; corrige si besoin. Un statut SKIPPED
    avec une raison de précondition (ex. « aucun client disponible ») est un
    **écart de données** à signaler — pas un pass.
+   - **Pré-vol** : si le run renvoie `SPEC_NOT_IN_CHECKOUT` (spec absent du
+     checkout d'exécution — branche non mergée), e2e_run liste les commits où le
+     spec existe. Relance alors avec `runFromRef=<sha>` : un **worktree
+     temporaire** au commit est créé (`/root/test-E2E/…`), le run s'y exécute
+     puis le worktree est nettoyé — rien n'est restauré dans main.
 10. **Commit** sur la branche de travail + informe l'utilisateur (la branche
     devra être mergée via le flux habituel / CI).
 
