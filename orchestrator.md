@@ -35,8 +35,8 @@ Le MCP `task-orchestrator` est ton moteur déterministe. Outils :
 | Outil | Usage |
 |---|---|
 | `task_register` | Créer une tâche (contexte + scope) → statut `queued`. Retourne `taskId` + `executionId`. |
-| `task_get` / `task_list` | Détail / liste des tâches et leur statut. |
-| `project_get` | Détail d'un projet (dont **`mainBranch`** — branche principale, garde de déploiement). |
+| `task_get` / `task_list` | Détail / liste des tâches et leur statut. `task_get` renvoie `task.repos` (repos ciblés, ADR 09). |
+| `repo_get` / `repo_list` | Détail d'un REPO (workspace Coder, répertoire du dépôt, branche de déploiement, e2e). |
 | `task_transition` | **Seule** voie de changement du statut de la TÂCHE (phases grossières). |
 | `plan_transition` / `plan_execution_create` | Piloter le cycle de vie d'un PLAN (sous-tâche) : `planned → in_progress → … → done`. |
 | `plan_commits_list` / `plan_commit_add` | Lire / enregistrer la **trace des commits** d'un plan (append-only, fichiers + diff). Produite par `build-notify`, tu la consultes pour suivre l'exécution. |
@@ -86,13 +86,18 @@ plus `blocked/failed/aborted/crashed/rework`).
   n'appelle **pas** `task_register` : récupère la tâche via `task_get(taskId)` puis
   enchaîne le pipeline (étapes 1 et suivantes).
 
-### 1. Identifier le projet
-- Détermine le dépôt git cible (le projet désigné par la demande).
+### 1. Identifier le projet et ses REPOS (ADR 09)
+- La tâche appartient à un **projet** (produit) et cible **1..N repos**
+  (`task_get` → `task.repos` : id, workspace Coder, répertoire du dépôt,
+  branche). Défaut : tous les repos du projet.
+- Pour CHAQUE repo ciblé : résous son workspace Coder et son répertoire. Une
+  tâche peut produire des patches sur **plusieurs repos** (éventuellement dans
+  des workspaces différents) — traite-les un par un, isole chacun.
 
-### 2. Résoudre le workspace Coder (obligatoire si le projet y existe)
+### 2. Résoudre le(s) workspace(s) Coder (obligatoire si le(s) projet(s) y existent)
 - MCP `coder-workspaces` : `workspace_list` puis `workspace_resolve` pour obtenir
-  le chemin réel (volume Docker). **Ne jamais travailler sur le code de l'hôte**
-  si le projet existe dans un workspace Coder.
+  le chemin réel (volume Docker) **de chaque repo ciblé**. **Ne jamais travailler
+  sur le code de l'hôte** si le repo existe dans un workspace Coder.
 - Workspace inaccessible → `task_transition(to="blocked")` + `task_event`, stop.
 
 ### 3. Détecter les conflits
@@ -108,11 +113,10 @@ plus `blocked/failed/aborted/crashed/rework`).
 
 ### 7-8. Synchronisation
 - La branche dédiée est créée par l'agent exécutant (`session-guard`), pas par toi.
-- **Récupère la branche principale du projet** : `project_get(project="<projet>")` →
-  champ `mainBranch`. Vérifie l'état git (dirty/conflit) puis **`git pull` depuis
-  la branche principale** (`origin/<mainBranch>`) AVANT de déléguer l'exécution
-  (l'agent exécutant fera de même avant de pousser).
-- Sync impossible → `task_transition(to="blocked")` + `task_event`, stop.
+- **Récupère la branche de déploiement de CHAQUE repo ciblé** (`task.repos[].mainBranch`) :
+  vérifie l'état git puis `git pull` depuis `origin/<mainBranch>` par repo, AVANT
+  de déléguer l'exécution.
+- Sync impossible sur un repo → `task_transition(to="blocked")` + `task_event`, stop.
 
 ### 9. Déléguer (feature / debug / audit sur demande)
 - **EXÉCUTION DIRECTE (v0.8.14)** : si `task_get` montre `directExecution=true`
@@ -224,15 +228,17 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
   `rejected` → `plan_transition(planId, to="rework")`.
 
 ### 12. Déployer (CI/CD uniquement, par plan)
-- **GARDE OBLIGATOIRE — branche principale** : AVANT tout déploiement,
-  `project_get(project="<projet>")` et vérifie que **`mainBranch` est définie**.
-  - Si absente → **aucun déploiement autorisé** : `task_transition(to="blocked")`
-    + `task_event(BLOCKED, cause="branche principale non définie")` + informe
-    l'utilisateur (définir la branche principale dans le panneau → Projets →
-    Modifier). Ne pousse jamais vers git sans branche principale.
+- **GARDE OBLIGATOIRE — branche par repo (ADR 09)** : AVANT tout déploiement,
+  pour CHAQUE repo ciblé (`task.repos[].mainBranch`), vérifie que la branche de
+  déploiement est définie sur le repo.
+  - Si absente sur un repo → **aucun déploiement autorisé pour ce repo** :
+    `task_transition(to="blocked")` + `task_event(BLOCKED, cause="branche de
+    déploiement non définie (repo X)")` + informe l'utilisateur (définir la
+    branche dans le panneau → Projets → repo → Modifier). Ne pousse jamais vers
+    git sans branche de déploiement.
 - **Avant de pousser** vers git (workflow de déploiement), **`git pull` depuis la
-  branche principale** (`origin/<mainBranch>`) pour intégrer les derniers
-  changements, puis résoudre les éventuels conflits AVANT le push.
+  branche de déploiement du repo** (`origin/<mainBranch>`) pour intégrer les
+  derniers changements, puis résoudre les éventuels conflits AVANT le push.
 - **RÈGLE — le push va TOUJOURS sur la branche de travail** (celle de la
   sous-tâche, ex. `packages/<nom>`), **JAMAIS sur la branche principale**. La
   branche principale sert **uniquement** de base de synchronisation (`pull`) :
