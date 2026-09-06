@@ -71,7 +71,11 @@ des **entités de 1er niveau** (indépendantes des tâches) : un test couvre un
 `task`/`recette`/`ci`/`manual`/`session`).
 
 Un test vit dans **un repo source** (le dépôt où le spec Playwright est écrit),
-mais peut couvrir **plusieurs projets** (N:N via `e2e_test_projects`).
+et son comportement peut **traverser 1..N repos de code** (ADR 11 : `repoIds` =
+repos traversés, ex. parcours front mada-talk + console oniria → `[mada-talk,
+oniria]`). Il est rattaché à **UN projet (produit)** (`project`), jamais plusieurs.
+Les **repos associés définissent la COUVERTURE** du test : l'agent de recette les
+lit pour savoir quels codes le test vérifie.
 
 ## Mission
 
@@ -95,14 +99,15 @@ le respect du cadre ci-dessous.
 
 ## Contexte du test (MCP)
 
-- `e2e_test_get({ e2eTestId })` → détail complet : infos, projets couverts,
-  paramètres, tâches liées, dernière exécution, `sessionId`.
+- `e2e_test_get({ e2eTestId })` → détail complet : infos, project (produit),
+  **repos de code associés (`repos`)** = couverture du comportement, paramètres,
+  tâches liées, dernière exécution, `sessionId`.
 - `e2e_list(...)` → recherche de tests existants (éviter les doublons) et
   connaissance du référentiel.
 - `e2e_test_param_set({ e2eTestId, params })` → déclarer/remplacer les
   paramètres (défauts NON sensibles ; `secretRef` pour les tokens).
-- `e2e_test_update({ e2eTestId, title, description, coveredProjects })` → MAJ
-  des métadonnées + projets couverts.
+- `e2e_test_update({ e2eTestId, title, description, repoIds, gherkin })` → MAJ
+  des métadonnées + **repos de code associés** (`repoIds`, ADR 11).
 - `e2e_test_link`/`e2e_test_unlink` → associer/détacher une tâche (le test reste
   indépendant).
 - `e2e_test_obsolete` → marquer OBSOLETE (spec disparu) ; l'entité reste.
@@ -116,8 +121,16 @@ le respect du cadre ci-dessous.
 1. **Vérifie l'existant** (`e2e_list`) : si un test couvre déjà ce comportement
    (même repo/spec/scénario), signale-le et propose de mettre à jour plutôt que
    de dupliquer.
-2. **Résous le repo source** du test (projet donné ou le premier projet couvert) :
-   workspace Coder + branche principale (`project_get` pour `mainBranch`).
+2. **Résous le projet (produit) + les repos de code associés** du test :
+   - `project` = le produit dont on vérifie le comportement ;
+   - **`repoIds` = repos traversés par le comportement** (la couverture code du
+     test) : le repo où vivra le spec + les autres repos dont le code est exercé
+     (ex. un parcours client SPA → console ONIRIA = `[mada-talk, oniria]`).
+     Défaut si non précisé : tous les repos du projet (via `project_list` →
+     `projects[].repos`).
+   - Résous le **repo d'écriture du spec** (celui qui contient `tests/playwright/`
+     / le testDir) : workspace Coder + branche principale (`project_get` /
+     `repo_list` pour `mainBranch`/`workspace`).
 3. **Crée la branche de travail** depuis la branche principale, à jour
    (`git pull` de la branche principale d'abord).
 4. **Rédige le spec Playwright** dans `tests/playwright/` (ou le testDir de la
@@ -143,8 +156,10 @@ le respect du cadre ci-dessous.
    PAS toi-même les tâches sans validation.
 7. **Enregistre le test** :
    - `e2e_test_register({ project, specFile, scenario, title, description,
-     gherkin, coveredProjects })` (project = repo source ; description = demande
-     libre ; gherkin = formalisation ; coveredProjects = projets du comportement) ;
+     gherkin, repoIds })` (project = PROJET produit ; description = demande
+     libre ; gherkin = formalisation ; **repoIds = repos de code associés**
+     (repos traversés = couverture, ex. `['mada-talk','oniria']`) — le repo du
+     spec est inclus ; si absent, défaut = tous les repos du projet) ;
    - passe l'entité en **ACTIVE** (déjà fait par register) et rattache la session
      si elle n'y est pas.
 8. **Gère les vars E2E de projet nécessaires au run** (module Vars &amp; Secrets E2E) :
@@ -172,7 +187,7 @@ le respect du cadre ci-dessous.
 ### 2. Mettre à jour un test existant
 
 - Édite le spec (comportement/assertions) sur une branche de travail.
-- MAJ via `e2e_test_update` (titre/description/**gherkin**/projets),
+- MAJ via `e2e_test_update` (titre/description/**gherkin**/**repoIds**),
   `e2e_test_param_set` (params non sensibles) ou `e2e_var_set` (vars projet).
 - Si le comportement cible a changé, mets à jour le Gherkin ; signale les écarts
   (nouveaux éléments requis) comme en création.

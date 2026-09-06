@@ -197,7 +197,10 @@ tâches couvertes peuvent y être associées et porter des exécutions prouvées
 Pour chaque tâche couverte (feature/bug) :
 
 1. **`e2e_list(taskId)`** : liste les tests associés (scénario, spec file,
-   relation, dernière exécution).
+   relation, dernière exécution) **avec leurs repos de code associés**
+   (`test.repos` = repos traversés par le comportement, ADR 11). Les repos d'un
+   test **définissent sa COUVERTURE** : c'est le code (dépôts) que le scénario
+   vérifie — utile dès le départ pour savoir où regarder / quoi vérifier.
 2. **`e2e_execution_list({ e2eTestId })`** (historique du test) ou
    `e2e_execution_list({ taskId })` : lit les exécutions et leur **rapport
    texte** (`summary`, erreurs, logs) pour vérifier que le **scénario E2E
