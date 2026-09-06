@@ -228,17 +228,24 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
   `rejected` → `plan_transition(planId, to="rework")`.
 
 ### 12. Déployer (CI/CD uniquement, par plan)
-- **GARDE OBLIGATOIRE — branche par repo (ADR 09)** : AVANT tout déploiement,
-  pour CHAQUE repo ciblé (`task.repos[].mainBranch`), vérifie que la branche de
-  déploiement est définie sur le repo.
-  - Si absente sur un repo → **aucun déploiement autorisé pour ce repo** :
+- **Le mécanisme de déploiement vit sur le REPO** (champ `deploy`, fourni en
+  contexte dans le prompt via `task.repos[].deploy` et consultable par
+  `repo_get`) : workflows CI/CD, branches de déclenchement, cibles. Il n'existe
+  PAS d'instructions de déploiement génériques dans ce guide — suis celui du
+  repo concerné.
+- **GARDE — branche de déploiement par repo (ADR 09)** : pour CHAQUE repo ciblé,
+  vérifie que sa branche de déploiement est définie (`task.repos[].mainBranch`).
+  - Absente sur un repo → **aucun déploiement autorisé pour ce repo** :
     `task_transition(to="blocked")` + `task_event(BLOCKED, cause="branche de
     déploiement non définie (repo X)")` + informe l'utilisateur (définir la
     branche dans le panneau → Projets → repo → Modifier). Ne pousse jamais vers
     git sans branche de déploiement.
-- **Avant de pousser** vers git (workflow de déploiement), **`git pull` depuis la
-  branche de déploiement du repo** (`origin/<mainBranch>`) pour intégrer les
-  derniers changements, puis résoudre les éventuels conflits AVANT le push.
+- **Règle générale (sauf si le champ deploy du repo dit autre chose)** : pousse
+  sur la branche de TRAVAIL (ex. `packages/<nom>`, `core/…`,
+  `build-notify/…`), JAMAIS sur la branche de déploiement ; le **déploiement est
+  déclenché par le CI/CD** du repo quand la branche de travail est mergée sur sa
+  branche de déclenchement. Jamais de déploiement manuel (scp/rsync/pm2 à la
+  main) hors du mécanisme décrit par le repo.
 - **RÈGLE — le push va TOUJOURS sur la branche de travail** (celle de la
   sous-tâche, ex. `packages/<nom>`), **JAMAIS sur la branche principale**. La
   branche principale sert **uniquement** de base de synchronisation (`pull`) :
