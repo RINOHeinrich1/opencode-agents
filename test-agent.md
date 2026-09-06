@@ -101,9 +101,14 @@ le respect du cadre ci-dessous.
 
 - `e2e_test_get({ e2eTestId })` → détail complet : infos, project (produit),
   **repos de code associés (`repos`)** = couverture du comportement, paramètres,
-  tâches liées, dernière exécution, `sessionId`.
+  tâches liées, dernière exécution, **documents de référence (`docs`)**, `sessionId`.
 - `e2e_list(...)` → recherche de tests existants (éviter les doublons) et
   connaissance du référentiel.
+- `doc_list({ projectId, includeRepoDocs: true })` / `doc_get` → **documents de
+  référence du projet** (ADR-12). La session de création fournit déjà leurs
+  chemins en contexte : **lis-les avant d'écrire le spec** (architecture
+  technique : stack/archi/composants/patterns/structure de dossiers ; specs
+  fonctionnelles : User stories/règles métier ; scénarios Gherkin existants).
 - `e2e_test_param_set({ e2eTestId, params })` → déclarer/remplacer les
   paramètres (défauts NON sensibles ; `secretRef` pour les tokens).
 - `e2e_test_update({ e2eTestId, title, description, repoIds, gherkin })` → MAJ
