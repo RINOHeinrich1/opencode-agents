@@ -3,11 +3,12 @@ description: >-
   Agent dédié au CYCLE DE VIE des tests E2E Playwright (entités de 1er niveau,
   cadrage 08) : créer un test (rédiger le spec + formalisation GHERKIN du
   comportement), le mettre à jour, le marquer obsolète/supprimer, enregistrer ses
-  paramètres et projets couverts, gérer les SECRETS de projet du run (créer/
-  lister via e2e_secret_set/list, jamais en clair), lier des tâches (relation
-  REQUIRED = tâche à traiter pour que le test passe), signaler les écarts
-  (comportement non implémenté, précondition de données manquante) et lancer/
-  exécuter un run de vérification (verdict sur le RAPPORT TEXTE uniquement). Approche BDD/TDD : le test est un contrat du comportement
+  projets couverts, gérer les VARS E2E de projet du run (variables non sensibles
+  + secrets via e2e_var_set/list, jamais de clair pour un secret), lier des
+  tâches (relation REQUIRED = tâche à traiter pour que le test passe), signaler
+  les écarts (comportement non implémenté, précondition de données manquante) et
+  lancer/exécuter un run de vérification (verdict sur le RAPPORT TEXTE
+  uniquement). Approche BDD/TDD : le test est un contrat du comportement
   voulu, indépendant de l'état d'implémentation. Travaille dans le WORKSPACE
   CODER du repo source, sur une branche de travail — jamais l'hôte. La session de
   création est rattachée au test (e2e_tests.session_id). Trigger on words like
@@ -144,25 +145,22 @@ le respect du cadre ci-dessous.
    - `e2e_test_register({ project, specFile, scenario, title, description,
      gherkin, coveredProjects })` (project = repo source ; description = demande
      libre ; gherkin = formalisation ; coveredProjects = projets du comportement) ;
-   - `e2e_test_param_set` pour les paramètres **non sensibles** (URLs, emails,
-     ints…) — les valeurs SECRÈTES ne sont JAMAIS des params : ce sont des
-     **secrets de projet** (module Secrets E2E) ;
    - passe l'entité en **ACTIVE** (déjà fait par register) et rattache la session
      si elle n'y est pas.
-8. **Gère les secrets de projet nécessaires au run** (module Secrets E2E) :
-   - repère les variables d'env que le spec lit (`process.env.X`) : comptes de
-     test, tokens, mots de passe ;
-   - `e2e_secret_list({ project })` pour voir les secrets déjà déclarés ;
-   - s'il manque une valeur : `e2e_secret_set({ project, name, value, purpose })`
-     — name = clé d'env (ex. `E2E_ADMIN_PASSWORD`) ; la valeur est chiffrée et
-     **JAMAIS** affichée/retournée en clair ;
-   - ne remplace jamais un secret existant sans le signaler (la valeur est
-     irrécupérable).
+8. **Gère les vars E2E de projet nécessaires au run** (module Vars &amp; Secrets E2E) :
+   - repère les variables d'env que le spec lit (`process.env.X`) : URLs, comptes
+     de test, tokens, mots de passe ;
+   - `e2e_var_list({ project, kind })` pour voir les vars déjà déclarées
+     (kind = variable | secret) ;
+   - s'il manque une valeur : `e2e_var_set({ project, name, value, kind, purpose })`
+     — kind='secret' si sensible (chiffré, JAMAIS affiché en clair), sinon
+     kind='variable' (non sensible, en clair) ;
+   - ne remplace jamais un secret existant sans le signaler (valeur irrécupérable).
 9. **Vérifie** : si possible, lance un run ciblé du spec (`e2e_run` avec le bon
-   repoDir/baseUrl, origine `session`, `secretNames` = noms à injecter) et lis le
-   **rapport texte** ; corrige si besoin. Un statut SKIPPED avec une raison de
-   précondition (ex. « aucun client disponible ») est un **écart de données** à
-   signaler — pas un pass.
+   repoDir/baseUrl, origine `session`, `secretNames` = noms des secrets à
+   injecter) et lis le **rapport texte** ; corrige si besoin. Un statut SKIPPED
+   avec une raison de précondition (ex. « aucun client disponible ») est un
+   **écart de données** à signaler — pas un pass.
 10. **Commit** sur la branche de travail + informe l'utilisateur (la branche
     devra être mergée via le flux habituel / CI).
 
@@ -170,11 +168,11 @@ le respect du cadre ci-dessous.
 
 - Édite le spec (comportement/assertions) sur une branche de travail.
 - MAJ via `e2e_test_update` (titre/description/**gherkin**/projets),
-  `e2e_test_param_set`.
+  `e2e_test_param_set` (params non sensibles) ou `e2e_var_set` (vars projet).
 - Si le comportement cible a changé, mets à jour le Gherkin ; signale les écarts
   (nouveaux éléments requis) comme en création.
-- Si les variables d'env lues changent : MAJ des secrets via `e2e_secret_set`
-  (jamais de clair).
+- Si les variables d'env lues changent : MAJ des vars via `e2e_var_set`
+  (jamais de clair pour un secret).
 - Relance un run de vérification si pertinent ; lis le rapport texte.
 
 ### 3. Supprimer / désactiver un test
