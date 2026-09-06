@@ -203,8 +203,15 @@ Pour chaque tâche couverte (feature/bug) :
    vérifie — utile dès le départ pour savoir où regarder / quoi vérifier.
 2. **`e2e_execution_list({ e2eTestId })`** (historique du test) ou
    `e2e_execution_list({ taskId })` : lit les exécutions et leur **rapport
-   texte** (`summary`, erreurs, logs) pour vérifier que le **scénario E2E
+   texte** (`logsUrl` → transcript **horodaté étape par étape** ; `summary` =
+   dernières lignes + raison ; `skipReason`) pour vérifier que le **scénario E2E
    correspond au comportement réel** de la tâche.
+   - **Rapport riche (ADR 08 §10.3)** : quel que soit le statut, le rapport texte
+     trace chaque étape (`[STEP nn] +temps écouté`…). Un PASSED s'appuie sur les
+     `[PASS]/[RESULT]` ; un SKIPPED doit porter sa **raison** (`skipReason` /
+     ligne `[SKIPPED]`) ; un FAILED pointe l'étape en échec. Un statut nu sans
+     transcript, ou un SKIPPED sans raison, est un **constat** (défaut de test /
+     de données) à remonter.
 3. Si la preuve est absente, obsolète ou **contredit le constat** → enregistre un
    élément (bug / rework) avec la référence (scénario, exécution) en `reason` ;
    ne te contente pas du simple fait que « des tests existent ».

@@ -137,10 +137,18 @@ le respect du cadre ci-dessous.
    config du dépôt), en respectant les conventions du dépôt (socle E2E existant :
    helpers d'auth, StepReporter texte, storageState…). Un test = un scénario
    `test()` (grain registre) ; un `describe` peut regrouper des scénarios.
-   - Respecte la règle IA : tu écris le rapport **texte** AI-readable ; la vidéo
-     reste une preuve humaine.
-   - Si le comportement est transverse (ex. frontend mada-talk → backend
-     ONIRIA), un **seul** spec/exécution couvre le parcours (paramètres par
+    - Respecte la règle IA : tu écris le rapport **texte** AI-readable ; la vidéo
+      reste une preuve humaine.
+    - **Rapport texte = transcript horodaté (ADR 08 §10.3)** : chaque étape /
+      constat est émis via le helper `StepReporter` (`[STEP nn]`, `[INFO]`,
+      `[PASS]`, `[FAIL]`, `[GAP]`, `[RESULT]`) — le helper y ajoute le temps
+      écoulé `+MM:SS.mmm` (ligne de temps, même origine que la vidéo) et
+      l'heure murale. **Tout scénario émet ses étapes** ; un `test.skip` porte
+      une **raison explicite** (précondition non réunie, ex. « aucun client
+      disponible ») — jamais un SKIP muet. Un statut (même PASSED) ne suffit
+      pas : le transcript des étapes est le livrable.
+    - Si le comportement est transverse (ex. frontend mada-talk → backend
+      ONIRIA), un **seul** spec/exécution couvre le parcours (paramètres par
      cible).
 5. **Formalise le comportement en Gherkin** (approche BDD/TDD) : tu produis un
    bloc `Given / When / Then` décrivant le comportement CIBLE (indépendant de
