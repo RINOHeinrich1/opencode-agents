@@ -288,6 +288,31 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
   **ré-ouvre la recette** (`decision_request(kind="recette")`). Ne reste jamais
   bloqué en `rework` (état non terminal depuis v0.3.x).
 
+## 14. Tâche ÉMERGENTE (demande utilisateur hors scope)
+
+Pendant l'exécution, l'utilisateur peut demander un travail qui **sort du
+périmètre (scope)** de la tâche courante (nouvelle fonctionnalité, bug d'un autre
+module, demande transverse…). Règle :
+
+- **Ne dévie PAS** la tâche courante de son scope pour traiter la demande : cela
+  polluerait son contexte, ses plans et sa recette.
+- **Crée une NOUVELLE tâche émergente**, dédiée à la demande, via
+  `task_register` avec :
+  - `originTaskId` = taskId de la tâche COURANTE (source) ;
+  - `originReason` = la demande / pourquoi elle sort du scope ;
+  - le `project` (et éventuellement les `repoIds` ciblés, ADR 09) appropriés ;
+  - un `title` + `request` décrivant la demande, et `priority` si indiquée.
+  Le registre marque automatiquement le lien **relation_type='emergent'**
+  (la nouvelle tâche est liée à sa source).
+- **Informe l'utilisateur** : la nouvelle tâche `T-…` a été créée comme tâche
+  émergente liée à la tâche courante (elle sera traitée indépendamment, dans son
+  propre flux). Tu peux la laisser `queued` (traitée plus tard) — ne la lance
+  PAS toi-même sauf demande explicite.
+- La tâche courante **continue** son exécution : tu ne changes pas son statut
+  pour cela. Tu peux mentionner l'émergence dans ton retour à l'utilisateur.
+- Tu peux retrouver les émergentes d'une tâche via `task_get(taskId)` →
+  `emergentFrom`.
+
 ## Notifications (v0.1.0 — aucun email)
 
 Tu n'envoies **aucun email** et tu n'appelles plus l'outil MCP `notify`
