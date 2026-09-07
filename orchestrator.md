@@ -104,6 +104,10 @@ plus `blocked/failed/aborted/crashed/rework`).
 - `scope_conflict(project, scope)` : détection **déterministe** des chevauchements
   de périmètre avec les tâches actives du projet.
 - Conflit → laisse la tâche `queued` (attente) ou demande une décision humaine.
+- **Package ONIRIA (repo oniria)** : le scope d'une tâche qui modifie un package
+  DOIT porter `packages/p7-ecosystem/src/extensions/<nom>` — c'est ce périmètre
+  qui assure la **sérialisation** (une seule tâche/version à la fois par package,
+  §12bis). Sans scope sur le package, deux tâches pourraient bump la même version.
 
 ### 4-6. Worktrees — gérés par l'agent exécutant, pas par toi
 - Tu ne réserves, ne suis et ne libères **aucun** worktree. Le sous-agent
@@ -261,6 +265,36 @@ Si `build-notify` relève une **incohérence** entre la réalité du code et le 
 - Succès → `plan_transition(planId, to="deployed")` puis vérification post-déploiement →
   `deployment_record(status="post_deploy_verified")` → `plan_transition(planId, to="post_deploy_verified")` → `plan_transition(planId, to="done")`.
 - Échec → `plan_transition(planId, to="deploy_failed")` ; correctif/retry → `deploy_pending`.
+
+### 12bis. Coordination — un package ONIRIA à la fois (sérialisation des déploiements)
+
+Quand la tâche touche un **package ONIRIA** (repo oniria/PBN, branche
+`packages/<nom>`, scope `packages/p7-ecosystem/src/extensions/<nom>`) :
+
+1. **Scope explicite = package** : à l'enregistrement, mets le **scope** de la
+   tâche sur le(s) package(s) touché(s) (`packages/p7-ecosystem/src/extensions/<nom>`).
+   `scope_conflict(project, scope)` détectera alors **toute autre tâche active**
+   qui touche le même package → tu laisses la nouvelle `queued` (elle attendra)
+   tant que l'autre n'est pas finie. **Jamais 2 tâches en parallèle sur le même
+   package** (2 bumps simultanés → course de version / écrasement CI).
+2. **Pas de bump concurrent** : l'exécuteur (`build-notify`) incrémente la version
+   du `oniria.package.json` (patch par défaut, skill `oniria-package-dev`) en
+   lisant `origin/oniria-preprod`. Comme le scope garantit l'exclusivité du
+   package, deux agents ne peuvent pas choisir la même version en même temps.
+3. **Sérialisation du déploiement** : quand une sous-tâche `packages/<nom>` est en
+   cours de déploiement (CI `package-build-deploy.yml`), **n'en déclenche pas une
+   seconde sur le même package** : vérifie l'état des runs CI/du CI en cours via
+   l'API (ou l'événement de déploiement) et attends la fin avant de pousser un
+   autre `packages/<nom>`. L'anti-doublon CI refuse de toute façon une version déjà
+   stagée ; la sérialisation évite l'écrasement entre deux versions successives.
+4. **Activation auto** : ne demande **jamais** à l'utilisateur d'activer
+   manuellement une version au frontend `/v2/packages` — le déploiement active
+   automatiquement (`DEPLOY_PACKAGE_OPERATOR_EMAIL`). Si un déploiement reste
+   « stage only » (email absent → warning), signale-le comme écart tracé, ne
+   fais pas l'activation à la main sans l'avoir noté.
+5. **Projet madatalk traverse 2 repos** (SPA `mada-talk` + backend `oniria`) : une
+   modification de package backend se coordonne sur le repo oniria ; ne pas
+   confondre avec le déploiement de la SPA (repo mada-talk, CI distinct).
 
 ### 13. Clôturer + ouvrir la recette
 - **Gate DOUX E2E (cadrage 08, décision T9)** : avant de clore une tâche
