@@ -246,6 +246,16 @@ directement sur `origin/<mainBranch>` — ton push va sur ta branche de travail
 (ex. `packages/<nom>`), et le **déploiement passe par le CI/CD** déclenché sur
 cette branche.
 
+**RÈGLE — package ONIRIA : incrémenter la version AVANT de pousser** (skill
+`oniria-package-dev`) : si tu modifies un package (repo oniria, branche
+`packages/<nom>`), **incrémente `version`** dans `oniria.package.json` (patch par
+défaut) en lisant la version sur `origin/oniria-preprod` AVANT de pousser. Le CI
+**refuse** toute version déjà présente (anti-doublon). Ne repousse jamais la même
+version ; n'active **jamais** manuellement via le frontend `/v2/packages`
+(l'activation est automatique au déploiement). La tâche/plan porte déjà le scope
+`packages/p7-ecosystem/src/extensions/<nom>` : tu n'es donc jamais en parallèle
+sur le même package (coordination orchestrateur §12bis).
+
 **Règle absolue** : ne commence JAMAIS à modifier un fichier d'un projet sans
 avoir exécuté l'ÉTAPE 1 (espace Coder) et l'ÉTAPE 2 (session-guard) ci-dessus.
 
