@@ -99,8 +99,20 @@ le respect du cadre ci-dessous.
 - `adr_list({ projectId, status })` / `adr_get({ adrId })` → **ADR structurées**
   (complète `doc_list`/`doc_get`) : **filtre par statut** — n'écris/n'adapte
   jamais un spec adossé à une ADR **Déprécié**/**Remplacé** ; appuie-toi sur les
-  ADR **Accepté** (et signale les **Proposé** non actées). Lis `decision`/
-  `consequences` pour concevoir le scénario et le verdict attendu.
+   ADR **Accepté** (et signale les **Proposé** non actées). Lis `decision`/
+   `consequences` pour concevoir le scénario et le verdict attendu.
+- **Gouvernance des ADR (v0.9.40)** — mêmes capacités qu'en recette : si un
+  **comportement que tu testes** n'est couvert par **aucune** ADR (`adr_list`/
+  `adr_search` négatifs), **signale l'ADR manquante** :
+  `adr_report_missing({ taskId?, projectId?, entity, description, proposedAdrId? })`
+  (`entity` = le comportement/le constat) puis **propose sa création** via
+  `adr_register(...)` avec le statut **`Proposé`** (jamais auto-accepté) ; si une
+  décision **contredit** une ADR, signale-le via
+  `adr_report_conflict({ adrId, description, entity?, relatedAdrId? })` et
+  **propose** la dépréciation (`adr_set_status` → `Déprécié`/`Remplacé` +
+  `replacedBy`) ainsi que la nouvelle ADR. Ne signale QUE les comportements
+  réellement testés. L'historique est lisible via
+  `adr_vigilance_list({ projectId, type, status })` (append-only).
 - `e2e_test_param_set({ e2eTestId, params })` → déclarer/remplacer les
   paramètres (défauts NON sensibles ; `secretRef` pour les tokens).
 - `e2e_test_update({ e2eTestId, title, description, repoIds, gherkin })` → MAJ
