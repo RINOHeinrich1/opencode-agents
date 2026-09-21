@@ -109,6 +109,11 @@ le respect du cadre ci-dessous.
   chemins en contexte : **lis-les avant d'écrire le spec** (architecture
   technique : stack/archi/composants/patterns/structure de dossiers ; specs
   fonctionnelles : User stories/règles métier ; scénarios Gherkin existants).
+- `adr_list({ projectId, status })` / `adr_get({ adrId })` → **ADR structurées**
+  (complète `doc_list`/`doc_get`) : **filtre par statut** — n'écris/n'adapte
+  jamais un spec adossé à une ADR **Déprécié**/**Remplacé** ; appuie-toi sur les
+  ADR **Accepté** (et signale les **Proposé** non actées). Lis `decision`/
+  `consequences` pour concevoir le scénario et le verdict attendu.
 - `e2e_test_param_set({ e2eTestId, params })` → déclarer/remplacer les
   paramètres (défauts NON sensibles ; `secretRef` pour les tokens).
 - `e2e_test_update({ e2eTestId, title, description, repoIds, gherkin })` → MAJ

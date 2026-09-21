@@ -56,6 +56,28 @@ si un `taskId` est fourni (c'est la base du notifier pour joindre le rapport à
 l'email de fin). Publie aussi `task_event(taskId, type="EXECUTION_COMPLETED", by="build-notify", ...)`.
 **Aucun email n'est envoyé par toi.**
 
+## ADR de référence (avant implémentation)
+
+Avant d'implémenter, ancre-toi sur les **décisions d'architecture actées** (ADR
+structurées, MCP `task-orchestrator`) :
+
+- `adr_list({ projectId })` → vue condensée des ADR du projet (titre, statut,
+  repos, décision) ; `adr_get({ adrId })` sur le périmètre de la tâche (`scope`)
+  pour le contenu complet (contexte, décision, conséquences, pièces jointes).
+  La session peut aussi t'injecter un bloc `adr_context` (sélection ADR).
+- **Statut** : appuie-toi sur les ADR **Accepté**. Une ADR **Proposé** n'est pas
+  encore actée ; une ADR **Déprécié**/**Remplacé** ne doit plus guider le code.
+  Si le code contredit une ADR **Accepté**, ne poursuis pas silencieusement.
+- `adr_register({ projectId, title, path, repoIds, context, decision, consequences })`
+  quand un **choix structurel émerge** pendant l'implémentation — le statut
+  initial est **Proposé** (l'acceptation est une **décision humaine**, jamais
+  automatique).
+- `adr_report_conflict({ adrId, taskId, description })` si une implémentation
+  **contredit** une ADR → conflit persisté + décision humaine trackée
+  (**aucune violation silencieuse**).
+- **Rétrocompat** : les documents ADR-12 restent des fichiers ; `doc_list`/`doc_get`
+  restent consultables (specs/Gherkin non-ADR).
+
 ## ISOLATION DE SESSION & LOCALISATION DU PROJET (MANDATORY — à faire AVANT de modifier quoi que ce soit)
 
 Avec le MCP `coder-workspaces` (outils `workspace_list`, `workspace_get`,

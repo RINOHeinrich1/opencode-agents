@@ -231,6 +231,12 @@ publies l'événement de traçabilité, tu ne poses jamais d'état toi-même.)
 - Si le MCP `oniria-arch` est disponible, exploite-le pour détecter les écarts
   (`ruleId`, `file:line`, `recommendation`) et en dériver des actions ciblées.
   Sinon, raisonne à partir de la structure lue.
+- Consulte les **ADR structurées** du projet : `adr_list({ projectId })` (vue
+  condensée : titre, statut, repos, décision) puis `adr_get({ adrId })` sur les
+  ADR pertinentes — retiens le **statut** (**Accepté** = actée, **Proposé** = non
+  encore actée, **Déprécié**/**Remplacé** = ne plus suivre). **Cite les ADR**
+  retenues dans « Contexte & raison d'être » du plan : une étape qui contredit une
+  ADR **Accepté** doit être justifiée ou refusée (elle signalerait un conflit).
 
 ### Phase 3 — Atomic Action Design (conception des étapes)
 
