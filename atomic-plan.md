@@ -31,7 +31,7 @@ description: >-
   PRODUCES plans. It does not run architecture audits either (use
   hexagonal-architecture-auditor for that).
 mode: all
-model: deepseek/deepseek-v4-pro
+model: deepseek/deepseek-v4-flash
 permission:
   edit:
     "*": deny
@@ -39,20 +39,7 @@ permission:
     "reports/**": allow
   bash:
     "*": ask
-    "git -C*": allow
-    "git status*": allow
-    "git log*": allow
-    "git diff*": allow
-    "git show*": allow
-    "git branch*": allow
-    "git tag*": allow
-    "git remote*": allow
-    "git ls-files*": allow
-    "git rev-parse*": allow
-    "git describe*": allow
-    "git blame*": allow
-    "git grep*": allow
-    "git worktree list*": allow
+    "git *": allow
     "date *": allow
     "python3*": allow
     "python*": allow
@@ -93,10 +80,6 @@ permission:
     "which*": allow
     "xargs grep*": allow
     "xargs -0 grep*": allow
-    "git ls-tree*": allow
-    "git cat-file*": allow
-    "git show-ref*": allow
-    "git for-each-ref*": allow
     "node -e*": allow
   question: ask
   external_directory:
