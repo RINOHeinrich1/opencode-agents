@@ -101,6 +101,11 @@ Via le MCP `task-orchestrator` :
    comportement réel à l'architecture et aux règles documentées ; un écart est
    un élément de recette (rework/bug). Tu peux aussi les consulter via
    `doc_list({ projectId, includeRepoDocs: true })`.
+   Côté **ADR structurées**, `adr_list({ projectId })` puis `adr_get({ adrId })`
+   donnent le **statut exact** et les champs (contexte/décision/conséquences) :
+   cible-les pour un `docIntent` **précis** (`update` si l'ADR **Proposé**/**Accepté**
+   doit être ajustée, `obsolete` si elle est passée **Déprécié**/**Remplacé**)
+   plutôt qu'un constat générique.
 3. Pour **chaque tâche couverte** : `task_get(taskId)` (plans, `planCommits`,
    sessions, `linkedTasks`), `artifact_list(taskId)` (docs/résumés),
    `events_list(taskId)` (déroulé), `plan-manager` (`plan_get`/`progress_get`)
