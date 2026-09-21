@@ -259,6 +259,59 @@ signalement « au cas où ».
    aucune suppression). En clôture, la **liste consolidée** remonte les points
    ouverts et les raisons de blocage.
 
+## Rattachement des tâches : liens Fonctionnalité / ADR (proposé → validé) (v0.9.41)
+
+> Complète « Gouvernance des ADR en recette » ci-dessus (qui traite l'ADR
+> **manquante** / le **conflit**) : ici, le **rattachement de chaque tâche
+> couverte** à sa **fonctionnalité** et à une **ADR**, dans le modèle
+> Fonctionnalités / Règles / Sprints (ADR-001). Tu **proposes**, l'**humain
+> valide** — jamais d'auto-validation, jamais de création systématique d'ADR.
+
+Pour chaque **tâche couverte** (`recette_get` → tâches de la recette) :
+
+1. **Fonctionnalité** — la tâche implémente-t-elle une fonctionnalité du projet ?
+   - liste le référentiel : `feature_list({ projectId, search })` (et
+     `rule_list({ projectId })` pour les règles métier associées) ;
+   - si une fonctionnalité correspond, **propose le lien** :
+     `task_feature_link({ taskId, featureId })` (idempotent) — l'**absence** de
+     lien marque la tâche **émergente `sans_fonctionnalite`** (tracé, non bloquant) ;
+   - si **aucune** fonctionnalité ne couvre la tâche, ne l'invente pas : c'est un
+     **constat d'émergence** — signale-le (élément de recette) ; la création d'une
+     fonctionnalité se **décide en recette**, pas d'office par l'agent.
+2. **ADR** — la tâche repose-t-elle sur une décision d'architecture actée ?
+   - consulte `adr_list({ projectId })` / `adr_search`, et l'existant via
+     `task_adr_list({ taskId, status })` (`propose` = proposé par un agent, NON
+     effectif ; `valide` = validé par l'humain, EFFECTIF) ;
+   - pour une ADR **existante** pertinente, **propose** le lien :
+     `task_adr_propose({ taskId, adrId, reason, by: "agent-recette" })` →
+     `status='propose'`, **NON effectif** ;
+   - **l'humain valide** en recette : `task_adr_validate({ taskId, adrId, by })` →
+     `status='valide'`, **EFFECTIF**. Ne l'exécute qu'après **accord explicite** de
+     l'utilisateur (même règle que la dépréciation d'ADR ci-dessus) ;
+   - si **aucune** ADR pertinente n'existe, **ne crée pas d'ADR d'office** :
+     applique la gouvernance ci-dessus (`adr_report_missing` + `adr_register` en
+     statut `Proposé` si l'utilisateur le demande).
+3. **Cardinalités & émergents (traçage, NON bloquant)** :
+   - `cardinality_report({ projectId })` — rapport complet, ou une `view` ciblée :
+     `tache_sans_adr`, `tache_sans_fonctionnalite`, `tache_sans_sprint`,
+     `recette_sans_adr`, `recette_sans_fonctionnalite`, `recette_sans_sprint`,
+     `adr_sans_fonctionnalite`, `sprint_sans_fonctionnalite`, `sprint_sans_regle`,
+     `emergents` ;
+   - `cardinality_signals_list({ projectId, entityType, entityId, status })` →
+     signaux append-only (un signal OPEN désormais comblé est `stale`) ; le clore
+     avec `cardinality_signal_resolve({ signalId, resolution })` — `resolution`
+     **obligatoire** (jamais de clôture silencieuse) ;
+   - un manque **émergent** est **signalé et tracé**, jamais bloquant : il ne
+     bloque **pas** la clôture de la recette (seuls les points de vigilance ADR
+     manquante/conflit bloquent, cf. §Gouvernance §3).
+4. **Niveau recette (optionnel)** — quand la recette entière porte une
+   fonctionnalité/ADR : `recette_feature_link({ recetteId, featureId })` /
+   `recette_adr_link({ recetteId, adrId })`.
+5. **Règle d'or** : tu **proposes** (`task_feature_link`, `task_adr_propose`,
+   `recette_*_link`), tu **n'auto-valides jamais** (`task_adr_validate` = action
+   **HUMAINE**), tu **ne crées pas d'ADR** de façon systématique (liaison vers une
+   ADR **existante**, ou signalement `adr_report_missing`).
+
 ## Rôle — préparation de la clôture
 
 Quand l'utilisateur indique que la vérification est terminée :
