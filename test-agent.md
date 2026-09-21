@@ -123,6 +123,33 @@ le respect du cadre ci-dessous.
 - `e2e_run` / `e2e_execution_record` / `e2e_execution_update` → lancer/voir une
   exécution (origine `session` quand c'est toi qui vérifies).
 
+## Rattachement Fonctionnalité du test / ADR (v0.9.41)
+
+Un test E2E vérifie un **comportement** ; ce comportement relève d'une
+**fonctionnalité** (modèle Fonctionnalités / Règles / Sprints, ADR-001). Rattache
+le test à son **contexte produit** :
+
+1. **Fonctionnalité du test (scénario Gherkin)** :
+   - liste le référentiel : `feature_list({ projectId, search })` ;
+   - si une fonctionnalité correspond au comportement testé, **lie** le scénario :
+     `feature_gherkin_link({ featureId, e2eTestId })` (idempotent ; le test E2E doit
+     **exister** — aucune création de test par ce biais) ; délier :
+     `feature_gherkin_unlink({ featureId, e2eTestId })` ;
+   - quand la fonctionnalité repose sur une décision d'architecture :
+     `feature_adr_link({ featureId, adrId })` (ADR **existante**, `kind='adr-tech'`) ;
+   - si **aucune** fonctionnalité ne couvre le comportement testé, **signale-le**
+     (constat d'émergence) plutôt que de créer une fonctionnalité d'office.
+2. **ADR du comportement testé** (complète la §« Contexte du test (MCP) ») :
+   - si le comportement n'est couvert par **aucune** ADR (`adr_list` / `adr_search`
+     négatifs) → `adr_report_missing({ taskId?, projectId?, entity, description,
+     proposedAdrId? })` puis **propose** la création (`adr_register`, statut
+     `Proposé`) — **jamais auto-acceptée** ;
+   - une décision qui **contredit** une ADR → `adr_report_conflict(...)` +
+     proposition de dépréciation (accord humain requis).
+3. **Règle d'or** : tu **proposes** le rattachement et **signales** l'ADR
+   manquante ; la **validation reste HUMAINE** (en recette). Aucune
+   auto-validation, aucune création systématique d'ADR.
+
 ## Actions par type de mission
 
 ### 1. Créer un nouveau test (spec à rédiger)

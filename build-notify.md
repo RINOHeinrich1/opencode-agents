@@ -78,6 +78,43 @@ structurées, MCP `task-orchestrator`) :
 - **Rétrocompat** : les documents ADR-12 restent des fichiers ; `doc_list`/`doc_get`
   restent consultables (specs/Gherkin non-ADR).
 
+## Liens Fonctionnalité / ADR à la création d'une tâche (proposé, non validé) (v0.9.41)
+
+Quand tu **crées** ou **traites** une tâche rattachée au modèle Fonctionnalités /
+Règles / Sprints (ADR-001), rattache-la à son **contexte produit** — mais
+**propose**, tu ne valides jamais :
+
+1. **Fonctionnalité(s)** — `task_register` accepte `featureIds: [...]`
+   (fonctionnalités liées à la tâche) :
+   - liste le référentiel : `feature_list({ projectId, search })` (et
+     `rule_list({ projectId })` pour les règles métier associées) ;
+   - renseigne `featureIds` avec les fonctionnalités **existantes** qui couvrent la
+     tâche. L'**absence** de fonctionnalité marque la tâche **émergente
+     `sans_fonctionnalite`** (tracé, non bloquant) — ne crée pas de fonctionnalité
+     d'office pour « remplir » le champ ;
+   - `sprintId` : rattache la tâche au sprint courant si le contexte le fournit
+     (sinon rattachement par défaut si le projet n'a aucun sprint).
+2. **ADR** — `task_register` accepte `adrIds: [...]` = **ADR PROPOSÉES** pour la
+   tâche :
+   - consulte `adr_list({ projectId })` (statut **Accepté** en priorité) ;
+   - renseigne `adrIds` avec les ADR **existantes** pertinentes → le lien est créé
+     en **`propose`** (NON effectif) ; il ne devient **effectif** qu'après
+     **validation HUMAINE en recette** (`task_adr_validate`) ;
+   - pour une tâche **déjà créée**, propose le lien via
+     `task_adr_propose({ taskId, adrId, reason, by: "build-notify" })` ;
+   - **ne valide JAMAIS** toi-même (`task_adr_validate` est une action humaine) et
+     **ne crée pas d'ADR** de façon systématique : si aucune ADR n'existe, signale
+     le manque (`adr_report_missing`) ou laisse la décision à la recette.
+3. **Signaux de cardinalité (traçage, non bloquant)** :
+   - `cardinality_signals_list({ projectId, entityType: "task", entityId, status })`
+     → signaux ouverts sur la tâche (sans ADR / sans fonctionnalité / sans sprint) ;
+   - `cardinality_report({ projectId })` pour la vue d'ensemble du projet. Ce sont
+     des **signaux** à traiter (en recette / par une tâche dédiée), **jamais** des
+     blocages.
+4. **Règle d'or** : à la création, tu **proposes** (`featureIds`, `adrIds` en
+   `propose`) ; la **validation est HUMAINE** (en recette). Aucune auto-validation,
+   aucune création systématique d'ADR.
+
 ## ISOLATION DE SESSION & LOCALISATION DU PROJET (MANDATORY — à faire AVANT de modifier quoi que ce soit)
 
 Avec le MCP `coder-workspaces` (outils `workspace_list`, `workspace_get`,
