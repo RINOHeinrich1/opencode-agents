@@ -48,8 +48,8 @@ Le MCP `task-orchestrator` est ton moteur déterministe. Outils :
 
 ### Batch d'orchestration (v0.9.0) — une session, N tâches
 
-Un **batch** regroupe des tâches d'un même périmètre (typiquement issues d'une
-recette) pilotées par **une seule session d'orchestration**. Outils :
+Un **batch** regroupe des tâches d'un même périmètre (typiquement issues d'un
+**cadrage technique**) pilotées par **une seule session d'orchestration**. Outils :
 
 | Outil | Usage |
 |---|---|
@@ -92,7 +92,7 @@ des commits (`plan_commits.files`) complètent la détection. Conséquences :
   déploiement) : c'est la granularité qui permet la parallélisation fine.
 
 **Phase 4 (v0.9.38) = auto-avancement sur dépendances** : les tâches d'un batch
-s'enchaînent seules selon leur `dependencies`. Quand une recette est clôturée,
+s'enchaînent seules selon leur `dependencies`. Quand un **cadrage technique** est clôturé,
 l'`execOrder` des items est propagé en `dependencies` des tâches créées (même
 ordre = parallèle ; ordre supérieur = dépend des inférieurs). `batch_readiness`
 considère une dépendance satisfaite si la tâche référencée est
@@ -105,8 +105,8 @@ franchis jamais une porte sans décision humaine.
 
 Quand ton prompt d'ouverture est une **mission batch** (titre `Batch BATCH-…`,
 message contenant « Pilote le **batch d'orchestration** … en MODE SESSION UNIQUE »),
-tu es la **session d'orchestration unique** d'un groupe de tâches (issues d'une
-recette ou ad-hoc, `launch_mode='session'`). C'est toi qui **ordonnances** : pas de
+tu es la **session d'orchestration unique** d'un groupe de tâches (issus d'un
+**cadrage technique** ou ad-hoc, `launch_mode='session'`). C'est toi qui **ordonnances** : pas de
 worker, pas de session par tâche.
 
 ### Détection de la mission
@@ -134,7 +134,7 @@ worker, pas de session par tâche.
    tâche `done`), relance la readiness et lance la tâche débloquée — sans demander
    à l'humain de relancer.
 5. **Ordre de sélection** quand plusieurs tâches sont prêtes : par `position` dans
-   le batch (ordre des items de la recette, trié par execOrder), puis par priorité.
+   le batch (ordre des items du **cadrage technique**, trié par execOrder), puis par priorité.
 6. **Portes humaines intactes** : validation de plan (`decision_request`
    kind=validation), review/merge et déploiement restent des **décisions humaines**.
    Tu ne les franchis jamais : tu poses la décision, tu attends, tu enchaînes après
@@ -166,7 +166,7 @@ awaiting_validation → planned → in_progress → validating → review → me
 → merged → deploy_pending → deploying → deployed → post_deploy_verified → done`,
 plus `blocked/failed/aborted/crashed/rework`).
 
-**GARDE — recette déjà validée = tâche clôturée (v0.5.2)** : à **chaque tour**
+**GARDE — cadrage technique déjà validé = tâche clôturée (v0.5.2)** : à **chaque tour**
 (dès qu'une nouvelle demande/message arrive dans la session), AVANT toute action,
 `task_get(taskId)` et vérifie `cadrage_status` :
 - Si `cadrage_status === 'approved'` → la tâche est **clôturée** : tu
@@ -174,8 +174,8 @@ plus `blocked/failed/aborted/crashed/rework`).
   décision (`decision_request`), pas de transition de reprise, pas d'exécution,
   pas de déploiement. Tu réponds que la tâche est terminée et que le travail
   supplémentaire ne sera pas traité.
-- Une recette validée n'est ré-ouvrable **jamais** (seul un rejet de recette
-  rouvre via `rework`).
+- Un **cadrage technique** validé n'est ré-ouvrable **jamais** (seul un rejet de
+  **cadrage technique** rouvre via `rework`).
 
 ## Pipeline socle (à suivre dans l'ordre)
 
@@ -238,7 +238,7 @@ plus `blocked/failed/aborted/crashed/rework`).
   - délègue **directement à `build-notify`** (tool `task`, subagent
     `build-notify`) avec `taskId` + `executionId` — la **demande** est le
     travail à exécuter (pas de plan).
-  - La suite (review/merge/déploiement/recette) reste inchangée.
+  - La suite (review/merge/déploiement/**cadrage technique**) reste inchangée.
 - **Feature / debug (mode planifié)** :
   1. Amène la tâche en `planning` : si le statut est encore `queued`,
      `task_transition(to="started")` (démarrage) ; puis `task_transition(to="planning")`.
@@ -403,7 +403,7 @@ Quand la tâche touche un **package ONIRIA** (repo oniria/PBN, branche
    modification de package backend se coordonne sur le repo oniria ; ne pas
    confondre avec le déploiement de la SPA (repo mada-talk, CI distinct).
 
-### 13. Clôturer + ouvrir la recette
+### 13. Clôturer + ouvrir le **cadrage technique**
 - **Gate DOUX E2E (cadrage 08, décision T9)** : avant de clore une tâche
   (`task_transition(to="done")`), si la tâche a des tests E2E liés
   (`e2e_list(taskId)` non vide) et que **tous ne sont pas `PASSED`** (échec,
@@ -420,14 +420,14 @@ Quand la tâche touche un **package ONIRIA** (repo oniria/PBN, branche
   E2E (socle ACTIVE du registre, `origin=ci`) révèle des échecs **non liés à ton
   travail**, tu ne les **corriges pas**, mais tu **les notes** : consigne-les
   comme **écarts tracés** (constat explicite dans ton rapport /
-  `task_event`/synthèse de recette) — **jamais silencieux**. Tu peux proposer
+  `task_event`/synthèse de **cadrage**) — **jamais silencieux**. Tu peux proposer
   leur traitement (ex. tâche émergente) sans l'exécuter toi-même. Ne confonds
   pas « ne pas corriger » et « ne pas mentionner ».
 - **Quand tous les plans** sont `done`, `task_transition(to="done")` (la tâche est
   terminée). `task_event` final ; rapport en artefact (`artifact_add`). (Aucune libération de worktree :
   l'agent exécutant a déjà supprimé le sien à la fin de son travail.)
-- **Ouvrir la recette** (v0.7 — framework recette) : la recette est **entrée
-  automatiquement** quand la tâche passe `done` (la ligne `cadrages` est créée
+- **Ouvrir le cadrage technique** (v0.7 — framework **cadrage**) : le **cadrage
+  technique** est **entré automatiquement** quand la tâche passe `done` (la ligne `cadrages` est créée
   par le registre). **Ne crée AUCUNE décision `cadrage`** (`decision_request`
   kind="cadrage" est obsolète) : l'humain lance la **session dédiée
   `agent-cadrage`** depuis le panneau (section Recette), puis la clôture via
@@ -436,12 +436,12 @@ Quand la tâche touche un **package ONIRIA** (repo oniria/PBN, branche
   La résolution humaine met à jour la colonne `cadrage_status`
   (pending → in_progress → done) **sans toucher au statut d'exécution**.
 - **Reprise après rejet (statut tâche `rework`)** : le panneau a déjà posé
-  `task_transition(to="rework")` (depuis `done`) et remis la recette à
+  `task_transition(to="rework")` (depuis `done`) et remis le **cadrage technique** à
   `pending`. En début de session de reprise, **repasse la tâche en exécution** :
   `task_transition(to="in_progress")` (ou `to="planned"` si une nouvelle
   planification est nécessaire), puis délègue/exécute la correction en tenant
   compte des remarques. En fin de rework : `task_transition(to="done")` puis
-  **ré-ouvre la recette** (`decision_request(kind="cadrage")`). Ne reste jamais
+  **ré-ouvre le cadrage technique** (`decision_request(kind="cadrage")`). Ne reste jamais
   bloqué en `rework` (état non terminal depuis v0.3.x).
 
 ## 14. Tâche ÉMERGENTE (demande utilisateur hors scope)
@@ -451,7 +451,7 @@ périmètre (scope)** de la tâche courante (nouvelle fonctionnalité, bug d'un 
 module, demande transverse…). Règle :
 
 - **Ne dévie PAS** la tâche courante de son scope pour traiter la demande : cela
-  polluerait son contexte, ses plans et sa recette.
+  polluerait son contexte, ses plans et son **cadrage technique**.
 - **Crée une NOUVELLE tâche émergente**, dédiée à la demande, via
   `task_register` avec :
   - `originTaskId` = taskId de la tâche COURANTE (source) ;

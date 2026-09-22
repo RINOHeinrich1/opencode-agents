@@ -99,20 +99,20 @@ Règles / Sprints (ADR-001), rattache-la à son **contexte produit** — mais
    - consulte `adr_list({ projectId })` (statut **Accepté** en priorité) ;
    - renseigne `adrIds` avec les ADR **existantes** pertinentes → le lien est créé
      en **`propose`** (NON effectif) ; il ne devient **effectif** qu'après
-     **validation HUMAINE en recette** (`task_adr_validate`) ;
+     **validation HUMAINE en cadrage** (`task_adr_validate`) ;
    - pour une tâche **déjà créée**, propose le lien via
      `task_adr_propose({ taskId, adrId, reason, by: "build-notify" })` ;
    - **ne valide JAMAIS** toi-même (`task_adr_validate` est une action humaine) et
      **ne crée pas d'ADR** de façon systématique : si aucune ADR n'existe, signale
-     le manque (`adr_report_missing`) ou laisse la décision à la recette.
+     le manque (`adr_report_missing`) ou laisse la décision au **cadrage**.
 3. **Signaux de cardinalité (traçage, non bloquant)** :
    - `cardinality_signals_list({ projectId, entityType: "task", entityId, status })`
      → signaux ouverts sur la tâche (sans ADR / sans fonctionnalité / sans sprint) ;
    - `cardinality_report({ projectId })` pour la vue d'ensemble du projet. Ce sont
-     des **signaux** à traiter (en recette / par une tâche dédiée), **jamais** des
+     des **signaux** à traiter (en **cadrage** / par une tâche dédiée), **jamais** des
      blocages.
 4. **Règle d'or** : à la création, tu **proposes** (`featureIds`, `adrIds` en
-   `propose`) ; la **validation est HUMAINE** (en recette). Aucune auto-validation,
+   `propose`) ; la **validation est HUMAINE** (en **cadrage**). Aucune auto-validation,
    aucune création systématique d'ADR.
 
 ## ISOLATION DE SESSION & LOCALISATION DU PROJET (MANDATORY — à faire AVANT de modifier quoi que ce soit)

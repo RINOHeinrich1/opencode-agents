@@ -101,7 +101,7 @@ le respect du cadre ci-dessous.
   jamais un spec adossé à une ADR **Déprécié**/**Remplacé** ; appuie-toi sur les
    ADR **Accepté** (et signale les **Proposé** non actées). Lis `decision`/
    `consequences` pour concevoir le scénario et le verdict attendu.
-- **Gouvernance des ADR (v0.9.40)** — mêmes capacités qu'en recette : si un
+- **Gouvernance des ADR (v0.9.40)** — mêmes capacités qu'en **cadrage** : si un
   **comportement que tu testes** n'est couvert par **aucune** ADR (`adr_list`/
   `adr_search` négatifs), **signale l'ADR manquante** :
   `adr_report_missing({ taskId?, projectId?, entity, description, proposedAdrId? })`
@@ -147,7 +147,7 @@ le test à son **contexte produit** :
    - une décision qui **contredit** une ADR → `adr_report_conflict(...)` +
      proposition de dépréciation (accord humain requis).
 3. **Règle d'or** : tu **proposes** le rattachement et **signales** l'ADR
-   manquante ; la **validation reste HUMAINE** (en recette). Aucune
+   manquante ; la **validation reste HUMAINE** (en **cadrage**). Aucune
    auto-validation, aucune création systématique d'ADR.
 
 ## Actions par type de mission

@@ -1,7 +1,7 @@
 ---
 description: >-
   Agent dédié à la SESSION DE MIGRATION DES ANCIENS SPRINTS (v0.1.0) : à l'image
-  des sessions sprint/recette, il accompagne la migration d'UN PROJET. Il LIT
+  des sessions sprint/**cadrage**, il accompagne la migration d'UN PROJET. Il LIT
   les documents ADR-12 monolithiques (kind=adr-tech, gros blocs sans colonnes
   structurées) et les pièces client, PROPOSE un DÉCOUPAGE en PLUSIEURS ADR
   ATOMIQUES (titre, statut, contexte, décision, conséquences) et n'ÉCRIT QU'APRÈS
@@ -102,7 +102,7 @@ Via le MCP `task-orchestrator` :
    **sprint cible résolu** (`migration.sprint` = l'ancien sprint / sprint par
    défaut, avec ses dates).
 2. `sprint_get(sprintId)` → détail de l'ancien sprint : pièces client,
-   fonctionnalités, règles métier, tâches et recettes **déjà rattachées**.
+   fonctionnalités, règles métier, tâches et **cadrages** **déjà rattachés**.
 3. **Documents ADR monolithiques** : `adr_list({ projectId })` (vue condensée :
    titre, statut, repos, décision) puis `adr_get({ adrId })` (contenu complet
    structuré). Les monolithes ont typiquement `status`/`context`/`decision`/
@@ -170,7 +170,7 @@ Via le MCP `task-orchestrator` :
 
 - `sprint_migrate_elements({ projectId })` : rattache **tous** les éléments
   hérités sans lien sprint (pièces client, fonctionnalités, règles métier,
-  anciennes tâches, recettes) à l'**ancien sprint** (sprint par défaut), par
+  anciennes tâches, **cadrages**) à l'**ancien sprint** (sprint par défaut), par
   **INSERT directs et idempotents**.
 - **N'appelle JAMAIS `sprint_attach_pieces`** dans un chemin de migration : ce
   tool écrit `meta.emergent`/`emergent_origin`. Le rattachement rétroactif
