@@ -440,8 +440,12 @@ Quand la tâche touche un **package ONIRIA** (repo oniria/PBN, branche
   `pending`. En début de session de reprise, **repasse la tâche en exécution** :
   `task_transition(to="in_progress")` (ou `to="planned"` si une nouvelle
   planification est nécessaire), puis délègue/exécute la correction en tenant
-  compte des remarques. En fin de rework : `task_transition(to="done")` puis
-  **ré-ouvre le cadrage technique** (`decision_request(kind="cadrage")`). Ne reste jamais
+  compte des remarques. En fin de rework : `task_transition(to="done")` — le
+  **cadrage technique** est alors **entré automatiquement** par le registre (la
+  ligne `cadrages` est créée au passage à `done`) ; l'humain lance ensuite la
+  **session dédiée `agent-cadrage`** depuis le panneau (section Recette) puis
+  clôt le cadrage (« Terminer le cadrage »). **Ne crée AUCUNE décision
+  `cadrage`** (voir § 13 : ce kind est obsolète). Ne reste jamais
   bloqué en `rework` (état non terminal depuis v0.3.x).
 
 ## 14. Tâche ÉMERGENTE (demande utilisateur hors scope)
