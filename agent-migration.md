@@ -202,7 +202,7 @@ Via le MCP `task-orchestrator` :
   `classifyEmergence` dans un chemin de migration.
 - **Autorisé et unique** : `sprint_migrate_elements` (INSERT directs dans
   `sprint_fonctionnalites` / `sprint_regles` / `sprint_pieces` / `task_sprints` /
-  `recette_sprints`, `ON CONFLICT DO NOTHING`).
+  `cadrage_sprints`, `ON CONFLICT DO NOTHING`).
 - Après migration, vérifie avec `cardinality_report({ projectId })` qu'**aucun
   nouveau signal d'émergence** n'apparaît sur les éléments hérités. Un émergent
   **préexistant** (classé à la création, avant la migration) reste inchangé :

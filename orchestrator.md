@@ -53,7 +53,7 @@ recette) pilotées par **une seule session d'orchestration**. Outils :
 
 | Outil | Usage |
 |---|---|
-| `batch_register` | Créer un batch (projet, titre, `recetteId` ou ad-hoc, `taskIds`, `maxParallel` défaut 2). |
+| `batch_register` | Créer un batch (projet, titre, `cadrageId` ou ad-hoc, `taskIds`, `maxParallel` défaut 2). |
 | `batch_get` | Détail : tâches + **readiness** + **matrice de conflit fichiers**. |
 | `batch_list` | Lister les batches (filtre projet). |
 | `batch_add_task` / `batch_remove_task` | Ajouter / retirer une tâche. |
@@ -168,8 +168,8 @@ plus `blocked/failed/aborted/crashed/rework`).
 
 **GARDE — recette déjà validée = tâche clôturée (v0.5.2)** : à **chaque tour**
 (dès qu'une nouvelle demande/message arrive dans la session), AVANT toute action,
-`task_get(taskId)` et vérifie `recette_status` :
-- Si `recette_status === 'approved'` → la tâche est **clôturée** : tu
+`task_get(taskId)` et vérifie `cadrage_status` :
+- Si `cadrage_status === 'approved'` → la tâche est **clôturée** : tu
   **n'acceptes aucune nouvelle demande** — pas de nouveau plan, pas de nouvelle
   décision (`decision_request`), pas de transition de reprise, pas d'exécution,
   pas de déploiement. Tu réponds que la tâche est terminée et que le travail
@@ -427,13 +427,13 @@ Quand la tâche touche un **package ONIRIA** (repo oniria/PBN, branche
   terminée). `task_event` final ; rapport en artefact (`artifact_add`). (Aucune libération de worktree :
   l'agent exécutant a déjà supprimé le sien à la fin de son travail.)
 - **Ouvrir la recette** (v0.7 — framework recette) : la recette est **entrée
-  automatiquement** quand la tâche passe `done` (la ligne `recettes` est créée
-  par le registre). **Ne crée AUCUNE décision `recette`** (`decision_request`
-  kind="recette" est obsolète) : l'humain lance la **session dédiée
-  `agent-recette`** depuis le panneau (section Recette), puis la clôture via
-  « Terminer la recette » (liste consolidée → confirmation → nouvelles tâches
+  automatiquement** quand la tâche passe `done` (la ligne `cadrages` est créée
+  par le registre). **Ne crée AUCUNE décision `cadrage`** (`decision_request`
+  kind="cadrage" est obsolète) : l'humain lance la **session dédiée
+  `agent-cadrage`** depuis le panneau (section Recette), puis la clôture via
+  « Terminer le cadrage » (liste consolidée → confirmation → nouvelles tâches
   typées liées à la tâche). La tâche initiale reste `done` et intacte.
-  La résolution humaine met à jour la colonne `recette_status`
+  La résolution humaine met à jour la colonne `cadrage_status`
   (pending → in_progress → done) **sans toucher au statut d'exécution**.
 - **Reprise après rejet (statut tâche `rework`)** : le panneau a déjà posé
   `task_transition(to="rework")` (depuis `done`) et remis la recette à
@@ -441,7 +441,7 @@ Quand la tâche touche un **package ONIRIA** (repo oniria/PBN, branche
   `task_transition(to="in_progress")` (ou `to="planned"` si une nouvelle
   planification est nécessaire), puis délègue/exécute la correction en tenant
   compte des remarques. En fin de rework : `task_transition(to="done")` puis
-  **ré-ouvre la recette** (`decision_request(kind="recette")`). Ne reste jamais
+  **ré-ouvre la recette** (`decision_request(kind="cadrage")`). Ne reste jamais
   bloqué en `rework` (état non terminal depuis v0.3.x).
 
 ## 14. Tâche ÉMERGENTE (demande utilisateur hors scope)
