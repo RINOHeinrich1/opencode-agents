@@ -5,11 +5,53 @@ description: >-
   traces) into the task registry and produces a markdown report. Notifications
   email are handled by the platform (opencode-notifier), never by the agent.
 mode: all
-model: deepseek/deepseek-v4-flash
+model: deepseek/deepseek-flash
 permission:
   edit: allow
   bash: allow
   question: ask
+  # --- Réduction du contexte : on coupe les MCP non nécessaires à l'exécution ---
+  # (le MCP task-orchestrator expose ~100 outils très verbeux et faisait dépasser
+  #  la fenêtre de contexte du modèle). Les règles spécifiques après les jokers
+  #  gagnent (dernière règle correspondante).
+  oniria-arch_*: deny
+  react-arch_*: deny
+  audit-manager_*: deny
+  context7_*: deny
+  sequential-thinking_*: deny
+  task-orchestrator_*: deny
+  plan-manager_*: deny
+  # Trace minimale nécessaire à l'exécution :
+  task-orchestrator_task_event: allow
+  task-orchestrator_task_get: allow
+  task-orchestrator_plan_commit_add: allow
+  task-orchestrator_artifact_add: allow
+  task-orchestrator_plan_set_branch: allow
+  task-orchestrator_decision_request: allow
+  plan-manager_progress_update: allow
+  plan-manager_progress_get: allow
+  plan-manager_incident_create: allow
+  plan-manager_inconsistency_create: allow
+# Réduction du NOMBRE d'outils exposés (le provider plafonne à 128 outils/requête ;
+# `permission: deny` ne les retire pas du payload, `tools: false` si).
+tools:
+  oniria-arch_*: false
+  react-arch_*: false
+  audit-manager_*: false
+  context7_*: false
+  sequential-thinking_*: false
+  task-orchestrator_*: false
+  plan-manager_*: false
+  task-orchestrator_task_event: true
+  task-orchestrator_task_get: true
+  task-orchestrator_plan_commit_add: true
+  task-orchestrator_artifact_add: true
+  task-orchestrator_plan_set_branch: true
+  task-orchestrator_decision_request: true
+  plan-manager_progress_update: true
+  plan-manager_progress_get: true
+  plan-manager_incident_create: true
+  plan-manager_inconsistency_create: true
 ---
 
 > **Norme de référence** : `docs/norme-environnement-travail.md` (v1.0). Tout

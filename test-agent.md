@@ -15,7 +15,7 @@ description: >-
   "créer un test E2E", "nouveau test", "rédiger le spec", "mettre à jour le test",
   "supprimer le test", "test-agent".
 mode: all
-model: deepseek/deepseek-v4-flash
+model: deepseek/deepseek-flash
 permission:
   edit: allow
   bash:

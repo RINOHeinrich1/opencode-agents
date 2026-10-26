@@ -15,7 +15,7 @@ description: >-
   (sprints.session_id). Trigger on words like "session de sprint", "sprint",
   "pièces client", "remplir les fonctionnalités", "règles métier", "agent-sprint".
 mode: all
-model: deepseek/deepseek-v4-flash
+model: deepseek/deepseek-flash
 permission:
   edit: deny
   bash:
@@ -221,6 +221,34 @@ Via le MCP `task-orchestrator` :
   est une décision humaine tracée, pas un nettoyage automatique).
 - La **clôture** (`sprint_close`) et la **reprise** (`sprint_reopen`) d'un sprint
   restent des actions de l'utilisateur (panneau) : tu ne les déclenches pas.
+
+## Qualification d'implémentation des éléments hérités (hors écosystème)
+
+- **Constat** : un élément **déjà en place** (cf. section précédente) est
+  **réellement implémenté dans le code** mais **sans aucune tâche écosystème
+  liée** : le rapport de sprint le compte « non implémenté ». C'est typiquement
+  le cas des fonctionnalités/règles **pré-existantes** créées avant tout
+  rattachement de tâches.
+- **Ce que tu peux faire** : **PROPOSER** de qualifier ces éléments hérités
+  `hors_ecosystem` via
+  `feature_mark_implemented({ featureId, origin: "hors_ecosystem", note, by })` /
+  `rule_mark_implemented({ ruleId, origin: "hors_ecosystem", note, by })`
+  (ou `feature_update`/`rule_update` avec `implemented=true` +
+  `implementedOrigin="hors_ecosystem"` + `implementedNote`).
+- **VALIDATION UTILISATEUR OBLIGATOIRE AVANT ÉCRITURE** : tu présentes la liste
+  des candidats avec le motif, tu attends l'accord explicite (`question`), puis
+  tu écris. **Jamais** de qualification silencieuse ni automatique.
+- **AUCUN MARQUAGE ÉMERGENT** : la qualification d'implémentation est un axe
+  **DISTINCT** de l'émergence. Tu ne touches **JAMAIS** `emergent` /
+  `emergent_origin` (calculés par le registre). Un élément hérité qualifié
+  `hors_ecosystem` reste **NON émergent**.
+- **Origine `ecosystem`** : ne qualifie **pas** `ecosystem` un élément sans
+  tâche `done` — l'origine `ecosystem` est **dérivée par le registre** du signal
+  « ≥1 tâche liée `done` ». `hors_ecosystem` est réservé aux éléments implémentés
+  **EN DEHORS** de l'écosystème.
+- Le rapport de sprint (`sprint_report`) reflète alors la ventilation
+  « N implémentée(s) — dont E dans l'écosystème, H hors écosystème » et la
+  section « Règles métier implémentées ».
 
 ## Cadre de la session
 

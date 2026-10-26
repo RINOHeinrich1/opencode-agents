@@ -11,7 +11,7 @@ description: >-
   Trigger on words like "orchestre", "coordonne les agents", "lance la tâche",
   "task registry", "état d'avancement des tâches", "réserve un worktree".
 mode: primary
-model: deepseek/deepseek-v4-flash
+model: deepseek/deepseek-flash
 permission:
   edit: allow
   bash: allow

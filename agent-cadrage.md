@@ -10,7 +10,7 @@ description: >-
   Trigger on words like "cadrage technique", "élément de cadrage",
   "analyse technique", "vérifier la tâche", "tester le résultat".
 mode: all
-model: opencode/big-pickle
+model: deepseek/deepseek-flash
 permission:
   edit: deny
   bash:

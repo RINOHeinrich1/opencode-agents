@@ -12,7 +12,7 @@ description: >-
   technique. Trigger on words like "recette évaluateur", "évaluation produit",
   "maquette", "test de performance", "tests standard", "test E2E".
 mode: all
-model: opencode/big-pickle
+model: deepseek/deepseek-flash
 permission:
   edit: deny
   bash:

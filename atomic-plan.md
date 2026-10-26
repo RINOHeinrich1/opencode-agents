@@ -31,7 +31,7 @@ description: >-
   PRODUCES plans. It does not run architecture audits either (use
   hexagonal-architecture-auditor for that).
 mode: all
-model: deepseek/deepseek-v4-flash
+model: deepseek/deepseek-flash
 permission:
   edit:
     "*": deny
@@ -86,6 +86,21 @@ permission:
     "*": ask
     "~/.config/opencode/**": allow
     "/var/lib/docker/volumes/coder-*/_data/**": allow
+# Réduction du NOMBRE d'outils exposés (le provider plafonne à 128 outils/requête ;
+# `permission: deny` ne les retire pas du payload, `tools: false` si).
+tools:
+  oniria-arch_*: false
+  react-arch_*: false
+  audit-manager_*: false
+  context7_*: false
+  sequential-thinking_*: false
+  task-orchestrator_*: false
+  plan-manager_*: false
+  task-orchestrator_task_event: true
+  task-orchestrator_task_get: true
+  task-orchestrator_artifact_add: true
+  plan-manager_plan_register: true
+  plan-manager_progress_update: true
 ---
 
 Tu es l'agent `atomic-plan`, agent de PLANIFICATION à granularité atomique.
